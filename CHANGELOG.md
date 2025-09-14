@@ -13,3 +13,7 @@
   - `photos-entry_screen_v1_ship-ready.md`
   - `README_PHASE1_SHIP-READY.md`
 - Repo initialized and tagged v0.1.0
+
+## v0.2.0 — 2025-09-14
+- Added CI build job + DB schema/RLS skeleton.
+- Added onboarding and photos-entry skeleton apps.
