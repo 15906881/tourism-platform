@@ -7,7 +7,8 @@
     "format:check": "prettier --check \"**/*.{js,ts,json,yml,yaml}\"",
     "format": "prettier --write \"**/*.{js,ts,json,yml,yaml}\"",
     "db:migrate": "bash scripts/migrate.sh",
-    "db:init": "./scripts/db_init.sh"
+    "db:init": "./scripts/db_init.sh",
+    "api:dev": "node api/server.js"
   },
   "devDependencies": {
     "eslint": "^9.10.0",
@@ -16,5 +17,9 @@
   },
   "engines": {
     "node": ">=20 <21"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.12.0"
   }
 }
