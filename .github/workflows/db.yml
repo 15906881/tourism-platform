@@ -1,8 +1,19 @@
 name: DB
+
 on:
+  workflow_dispatch:
   pull_request:
+    branches: [develop, main]
+    paths:
+      - 'database/**'
+      - 'scripts/**'
+      - '.github/workflows/db.yml'
   push:
-    branches: [ develop, main ]
+    branches: [develop]
+    paths:
+      - 'database/**'
+      - 'scripts/**'
+      - '.github/workflows/db.yml'
 
 jobs:
   db-migrations:
@@ -16,18 +27,14 @@ jobs:
         options: >-
           --health-cmd="pg_isready -U postgres"
           --health-interval=5s --health-timeout=5s --health-retries=10
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install psql client
+      - name: Install libpq
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
       - name: Run migrations
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
         run: bash scripts/migrate.sh
-
       - name: RLS smoke test
         env:
           APP_DB_URL: postgresql://tp_user:tp_password@localhost:5432/postgres
