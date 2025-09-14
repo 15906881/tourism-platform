@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ develop ]
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          set -e
+          test -f PROJECT_PLAN_PHASE1.md
+          test -f CHANGELOG.md
+          test -f README_PHASE1_SHIP-READY.md
+  markdown:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          npm i -g markdownlint-cli@0.41.0
+          markdownlint -c .markdownlint.json -i .markdownlintignore CHANGELOG.md PROJECT_PLAN_PHASE1.md || true
