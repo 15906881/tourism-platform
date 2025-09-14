@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ develop ]
+
+jobs:
+  sanity:
+    name: Required files exist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify required docs
+        run: |
+          set -euo pipefail
+          for f in PROJECT_PLAN_PHASE1.md CHANGELOG.md README_PHASE1_SHIP-READY.md; do
+            if [ ! -f "$f" ]; then
+              echo "::error file=$f::Missing required file: $f"
+              exit 1
+            fi
+          done
+          echo "All required files present."
+
+  markdown:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install markdownlint-cli
+        run: npm i -g markdownlint-cli@0.41.0
+      - name: Run markdownlint
+        run: |
+          markdownlint "**/*.md" || (echo "::error::Markdown lint failed. Fix or add .markdownlint.json to adjust rules."; exit 1)
