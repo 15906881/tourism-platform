@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Block accidental pushes to main unless explicitly allowed.
+while read local_ref local_sha remote_ref remote_sha; do
+  if [[ "$remote_ref" == "refs/heads/main" ]]; then
+    echo "❌ Blocked: direct pushes to 'main' are disabled for this repo."
+    echo "If you *really* need to push, set GIT_ALLOW_MAIN_PUSH=1 or use --no-verify (not recommended)."
+    if [[ "$GIT_ALLOW_MAIN_PUSH" != "1" ]]; then
+      exit 1
+    fi
+  fi
+done
+exit 0
