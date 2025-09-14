@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "lint": "eslint . --ext .js,.ts || true",
+    "lint": "eslint . --ext .js,.ts --fix",
     "format:check": "prettier --check \"**/*.{js,ts,json,yml,yaml}\"",
     "format": "prettier --write \"**/*.{js,ts,json,yml,yaml}\"",
     "db:migrate": "bash scripts/migrate.sh",
@@ -11,8 +11,10 @@
     "api:dev": "node api/server.js"
   },
   "devDependencies": {
+    "@eslint/js": "^9.35.0",
     "eslint": "^9.10.0",
     "eslint-config-prettier": "^9.1.0",
+    "globals": "^16.4.0",
     "prettier": "^3.3.3"
   },
   "engines": {
