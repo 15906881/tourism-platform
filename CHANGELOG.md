@@ -17,3 +17,7 @@
 ## v0.2.0 — 2025-09-14
 - Added CI build job + DB schema/RLS skeleton.
 - Added onboarding and photos-entry skeleton apps.
+
+## v0.2.1 — 2025-09-14
+- DB: security/grants + demo seed.
+- CI: DB migrations + RLS smoke workflow.
