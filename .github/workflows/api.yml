@@ -1,0 +1,54 @@
+name: API
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  api-smoke:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s --health-timeout=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client jq
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Run DB migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+        run: bash scripts/migrate.sh
+
+      - name: Start API (background)
+        env:
+          APP_DB_URL: postgresql://tp_user:tp_password@localhost:5432/postgres
+        run: |
+          node api/server.js & echo $! > api.pid
+          # wait for /health
+          timeout 30 bash -c 'until curl -sf http://localhost:3000/health >/dev/null; do sleep 0.5; done'
+
+      - name: Smoke: /users for demo tenant includes demo admin
+        run: |
+          RESP="$(curl -s "http://localhost:3000/users?tenant=demo")"
+          echo "$RESP" | jq .
+          echo "$RESP" | jq -e 'type=="array" and length>=1 and any(.[]; .email=="demo@local.test")'
+
+      - name: Stop API
+        if: always()
+        run: kill "$(cat api.pid)" || true
