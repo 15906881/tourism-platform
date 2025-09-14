@@ -1,0 +1,5 @@
+# Code ownership — auto-requests review on PRs
+# Format: pattern  @owner1 @owner2
+* @CRAN2025
+/docs/** @CRAN2025
+/database/** @CRAN2025
