@@ -5,7 +5,9 @@
   "scripts": {
     "lint": "eslint . --ext .js,.ts || true",
     "format:check": "prettier --check \"**/*.{js,ts,json,yml,yaml}\"",
-    "format": "prettier --write \"**/*.{js,ts,json,yml,yaml}\""
+    "format": "prettier --write \"**/*.{js,ts,json,yml,yaml}\"",
+    "db:migrate": "bash scripts/migrate.sh",
+    "db:init": "./scripts/db_init.sh"
   },
   "devDependencies": {
     "eslint": "^9.10.0",
