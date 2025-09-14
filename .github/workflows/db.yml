@@ -1,33 +1,29 @@
 name: DB
 on:
   pull_request:
-  push:
-    branches: [ develop, main ]
+  workflow_dispatch:
 
 jobs:
-  db-migrations:
+  db:
+    name: DB migrations + RLS smoke
     runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:17
         env:
           POSTGRES_PASSWORD: postgres
-        ports: ['5432:5432']
+        ports: ["5432:5432"]
         options: >-
           --health-cmd="pg_isready -U postgres"
           --health-interval=5s --health-timeout=5s --health-retries=10
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install psql client
+      - name: Install libpq
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
       - name: Run migrations
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
         run: bash scripts/migrate.sh
-
       - name: RLS smoke test
         env:
           APP_DB_URL: postgresql://tp_user:tp_password@localhost:5432/postgres
