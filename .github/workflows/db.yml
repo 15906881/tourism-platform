@@ -1,9 +1,12 @@
+cd ~/tourism-platform
+
+cat > .github/workflows/db.yml <<'YAML'
 name: DB
 
 on:
   workflow_dispatch:
-  push:
   pull_request:
+  push:
 
 jobs:
   db-migrations:
@@ -16,24 +19,19 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
-        # No "ports" needed; jobs talk to services via the internal network.
+        ports:
+          - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres -d postgres"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=30
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install libpq
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
-      # (Optional) quick connectivity proof before migrations
-      # - name: Connectivity check
-      #   env:
-      #     DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
-      #   run: psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -c 'select version();'
 
       - name: Run migrations
         env:
@@ -44,3 +42,4 @@ jobs:
         env:
           APP_DB_URL: postgresql://tp_user:tp_password@postgres:5432/postgres
         run: bash scripts/db_smoke.sh
+YAML
