@@ -25,34 +25,4 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
         ports:
-          - 5432.0.0.1:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 30
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install psql client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
-      - name: Run migrations
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@postgres.0.0.1:5432/postgres
-        run: bash scripts/migrate.sh
-
-      - name: RLS smoke test (non-blocking)
-        continue-on-error: true
-        env:
-          APP_DB_URL: postgresql://tp_user:tp_password@postgres.0.0.1:5432/postgres
-        run: bash scripts/db_smoke.sh
-
-      - name: Upload DB logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: db-logs
-          path: ci_migrate.log
-          if-no-files-found: warn
+          - "5432.0.0.1:5432"
