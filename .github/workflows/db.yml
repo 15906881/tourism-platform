@@ -1,6 +1,3 @@
-cd ~/tourism-platform
-
-cat > .github/workflows/db.yml <<'YAML'
 name: DB
 
 on:
@@ -42,4 +39,3 @@ jobs:
         env:
           APP_DB_URL: postgresql://tp_user:tp_password@postgres:5432/postgres
         run: bash scripts/db_smoke.sh
-YAML
