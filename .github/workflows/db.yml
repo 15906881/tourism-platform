@@ -32,7 +32,7 @@ jobs:
 
       - name: Run migrations
         env:
-          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
+          DATABASE_URL: postgresql://postgres:postgres:5432/postgres
         run: bash scripts/migrate.sh
 
       - name: RLS smoke test
