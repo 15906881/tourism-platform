@@ -1,20 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Log everything to ci_migrate.log and stdout
-exec > >(tee -a ci_migrate.log) 2>&1
-
 echo "==> psql version"
-psql --version || true
-
+psql --version
 echo "==> DATABASE_URL (redacted)"
-echo "${DATABASE_URL}" | sed -E 's#(//[^:/]+):[^@]+#\1:******#'
+echo "${DATABASE_URL}" | sed 's#//[^:]*:[^@]*@#//******@#'
 
 echo "==> Waiting for Postgres on host 'postgres'..."
 ok=0
 for i in {1..60}; do
-  if pg_isready -h 127.0.0.1 -p 5432 -U postgres -d postgres >/dev/null 2>&1; then
-    if psql "$DATABASE_URL" -c "select 1" >/dev/null 2>&1; then
+  if pg_isready -h postgres -p 5432 -U postgres -d postgres >/dev/null 2>&1; then
+    if psql "${DATABASE_URL}" -c "select 1" >/dev/null 2>&1; then
       echo "DB is reachable."
       ok=1
       break
@@ -29,5 +25,5 @@ if [ "$ok" -ne 1 ]; then
 fi
 
 echo "==> Running migrations"
-psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f db/schema.sql
+psql -v ON_ERROR_STOP=1 "${DATABASE_URL}" -f db/schema.sql
 echo "==> Migrations complete"

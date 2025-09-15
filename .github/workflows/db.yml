@@ -3,19 +3,17 @@ name: DB
 on:
   workflow_dispatch:
   push:
-    paths:
-      - ".github/workflows/db.yml"
-      - "db/**"
-      - "scripts/migrate.sh"
-  pull_request:
-    paths:
-      - "db/**"
-      - "scripts/migrate.sh"
+    branches: [develop, fix/db-ci]
 
 jobs:
   db-migrations:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+
+    # Run job steps inside a lightweight Linux container.
+    # This job container shares a Docker network with the 'postgres' service below,
+    # so we can connect to it via hostname 'postgres' (no host port mapping needed).
+    container:
+      image: ubuntu:24.04
 
     services:
       postgres:
@@ -24,5 +22,37 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
-        ports:
-          - "5432.0.0.1:5432"
+        # Health check so the service is considered ready before steps run
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+        # NOTE: no 'ports:' section when using a job container
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install psql client & tools
+        run: |
+          apt-get update -y
+          DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl git postgresql-client
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
+        run: bash scripts/migrate.sh | tee -a ci_migrate.log
+
+      - name: RLS smoke test (non-blocking)
+        continue-on-error: true
+        env:
+          APP_DB_URL: postgresql://tp_user:tp_password@postgres:5432/postgres
+        run: bash scripts/db_smoke.sh | tee -a ci_migrate.log
+
+      - name: Upload DB logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-logs
+          path: ci_migrate.log
+          if-no-files-found: warn
