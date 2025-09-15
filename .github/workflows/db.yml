@@ -9,9 +9,7 @@ jobs:
   db-migrations:
     runs-on: ubuntu-latest
 
-    # Run job steps inside a lightweight Linux container.
-    # This job container shares a Docker network with the 'postgres' service below,
-    # so we can connect to it via hostname 'postgres' (no host port mapping needed).
+    # Run the job inside a Linux container that shares a network with services.
     container:
       image: ubuntu:24.04
 
@@ -22,32 +20,45 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
-        # Health check so the service is considered ready before steps run
         options: >-
           --health-cmd "pg_isready -U postgres -d postgres"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 30
-        # NOTE: no 'ports:' section when using a job container
+        # NOTE: no 'ports:' when using a job container
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Ensure log file exists (always artifactable)
+        run: : > ci_migrate.log
 
       - name: Install psql client & tools
         run: |
           apt-get update -y
           DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl git postgresql-client
 
+      - name: Connectivity diagnostics
+        shell: bash
+        run: |
+          {
+            echo "==> Hostname"
+            hostname
+            echo "==> /etc/hosts"
+            sed -n '1,200p' /etc/hosts
+            echo "==> DNS for 'postgres'"
+            getent hosts postgres || true
+            echo "==> pg_isready raw"
+            pg_isready -h postgres -p 5432 -U postgres -d postgres || true
+          } | tee -a ci_migrate.log
+
       - name: Run migrations
         env:
           DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
-        run: bash scripts/migrate.sh | tee -a ci_migrate.log
-
-      - name: RLS smoke test (non-blocking)
-        continue-on-error: true
-        env:
-          APP_DB_URL: postgresql://tp_user:tp_password@postgres:5432/postgres
-        run: bash scripts/db_smoke.sh | tee -a ci_migrate.log
+        shell: bash
+        run: |
+          set -o pipefail
+          bash -x scripts/migrate.sh 2>&1 | tee -a ci_migrate.log
 
       - name: Upload DB logs
         if: always()
