@@ -2,27 +2,26 @@ name: DB
 
 on:
   workflow_dispatch:
-  pull_request:
   push:
+  pull_request:
 
 jobs:
   db-migrations:
     runs-on: ubuntu-latest
 
     services:
-      postgres17:
+      postgres:
         image: postgres:17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
+        # No "ports" needed; jobs talk to services via the internal network.
         options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 30
+          --health-cmd="pg_isready -U postgres -d postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
 
     steps:
       - uses: actions/checkout@v4
@@ -30,9 +29,15 @@ jobs:
       - name: Install libpq
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
+      # (Optional) quick connectivity proof before migrations
+      # - name: Connectivity check
+      #   env:
+      #     DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
+      #   run: psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -c 'select version();'
+
       - name: Run migrations
         env:
-          DATABASE_URL: postgresql://postgres:postgres:5432/postgres
+          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
         run: bash scripts/migrate.sh
 
       - name: RLS smoke test
