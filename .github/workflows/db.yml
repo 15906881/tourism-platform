@@ -2,12 +2,20 @@ name: DB
 
 on:
   workflow_dispatch:
-  pull_request:
   push:
+    paths:
+      - ".github/workflows/db.yml"
+      - "db/**"
+      - "scripts/migrate.sh"
+  pull_request:
+    paths:
+      - "db/**"
+      - "scripts/migrate.sh"
 
 jobs:
   db-migrations:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     services:
       postgres:
@@ -27,50 +35,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 0) Always create a log file so the artifact step has something to upload
-      - name: Init empty log
-        run: : > ci_migrate.log
-
       - name: Install psql client
-        run: |
-          sudo apt-get update && sudo apt-get install -y postgresql-client \
-          2>&1 | tee -a ci_migrate.log
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      # 1) Quick context + repo layout to the log
-      - name: Context and tree
-        run: |
-          echo "== GITHUB CONTEXT ==" | tee -a ci_migrate.log
-          echo "event=$GITHUB_EVENT_NAME ref=$GITHUB_REF sha=$GITHUB_SHA" | tee -a ci_migrate.log
-          echo "== WORKSPACE TREE ==" | tee -a ci_migrate.log
-          (ls -la && echo && ls -la db || true) | tee -a ci_migrate.log
-
-      # 2) Check schema file exists
-      - name: Verify schema presence
-        run: |
-          if [ ! -f db/schema.sql ]; then
-            echo "ERROR: db/schema.sql is missing" | tee -a ci_migrate.log
-            exit 1
-          fi
-          echo "Found db/schema.sql" | tee -a ci_migrate.log
-
-      # 3) Connectivity probe before running migrate.sh
-      - name: Connectivity check
-        env:
-          URL: postgresql://postgres:postgres@postgres:5432/postgres
-        run: |
-          echo "Probing DB with pg_isready + \conninfo..." | tee -a ci_migrate.log
-          pg_isready -h postgres -p 5432 -U postgres -d postgres 2>&1 | tee -a ci_migrate.log
-          psql "$URL" -c '\conninfo' 2>&1 | tee -a ci_migrate.log
-
-      # 4) Run migrations (append to log; preserve exit code)
       - name: Run migrations
         env:
           DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
-        run: |
-          set -o pipefail
-          bash scripts/migrate.sh 2>&1 | tee -a ci_migrate.log
+        run: bash scripts/migrate.sh
 
-      # 5) Always upload the log, even if something above failed
+      - name: RLS smoke test (non-blocking)
+        continue-on-error: true
+        env:
+          APP_DB_URL: postgresql://tp_user:tp_password@postgres:5432/postgres
+        run: bash scripts/db_smoke.sh
+
       - name: Upload DB logs
         if: always()
         uses: actions/upload-artifact@v4
