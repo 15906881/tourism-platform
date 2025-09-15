@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
+: "${DATABASE_URL:?DATABASE_URL is required}"
 
-: "${DATABASE_URL:=postgresql:///postgres}"
-echo "Applying migrations to $DATABASE_URL"
-
-if command -v pg_isready >/dev/null 2>&1; then
-  echo "Waiting for Postgres to accept connections..."
-  until pg_isready >/dev/null 2>&1; do sleep 0.5; done
-fi
-
-for f in database/migrations/*.sql; do
-  [ -e "$f" ] || continue   # skip if no matches
-  echo ">> $f"
-  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f" >/dev/null
+echo "Applying migrations to ${DATABASE_URL//:\/\/[^@]*@/:\/\/***@}"
+echo "Waiting for Postgres to accept connections..."
+for i in {1..120}; do
+  if psql "$DATABASE_URL" -c "select 1" >/dev/null 2>&1; then
+    echo "Postgres is up."
+    break
+  fi
+  sleep 1
+  if (( i == 120 )); then
+    echo "ERROR: Postgres never became ready." >&2
+    exit 1
+  fi
 done
 
-echo "Done."
+echo "Running migrations..."
+psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f db/schema.sql
