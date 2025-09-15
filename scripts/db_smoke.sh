@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_DB_URL="${APP_DB_URL:-postgresql://tp_user:tp_password@postgres:5432/postgres}"
+APP_DB_URL="${APP_DB_URL:-postgresql://tp_user:tp_password@postgres.0.0.1:5432/postgres}"
 
 echo "Running RLS smoke test against ${APP_DB_URL}"
 # demo tenant should exist from seeds

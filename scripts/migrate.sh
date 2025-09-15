@@ -13,7 +13,7 @@ echo "${DATABASE_URL}" | sed -E 's#(//[^:/]+):[^@]+#\1:******#'
 echo "==> Waiting for Postgres on host 'postgres'..."
 ok=0
 for i in {1..60}; do
-  if pg_isready -h postgres -p 5432 -U postgres -d postgres >/dev/null 2>&1; then
+  if pg_isready -h 127.0.0.1 -p 5432 -U postgres -d postgres >/dev/null 2>&1; then
     if psql "$DATABASE_URL" -c "select 1" >/dev/null 2>&1; then
       echo "DB is reachable."
       ok=1

@@ -25,7 +25,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
         ports:
-          - 5432:5432
+          - 5432.0.0.1:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d postgres"
           --health-interval 5s
@@ -40,13 +40,13 @@ jobs:
 
       - name: Run migrations
         env:
-          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
+          DATABASE_URL: postgresql://postgres:postgres@postgres.0.0.1:5432/postgres
         run: bash scripts/migrate.sh
 
       - name: RLS smoke test (non-blocking)
         continue-on-error: true
         env:
-          APP_DB_URL: postgresql://tp_user:tp_password@postgres:5432/postgres
+          APP_DB_URL: postgresql://tp_user:tp_password@postgres.0.0.1:5432/postgres
         run: bash scripts/db_smoke.sh
 
       - name: Upload DB logs
