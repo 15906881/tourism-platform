@@ -1,16 +1,25 @@
+cat > .github/workflows/db.yml <<'YAML'
 name: DB
 
 on:
   workflow_dispatch:
-  pull_request:
   push:
+    paths:
+      - "db/**"
+      - "scripts/**"
+      - ".github/workflows/db.yml"
+  pull_request:
+    paths:
+      - "db/**"
+      - "scripts/**"
+      - ".github/workflows/db.yml"
 
 jobs:
   db-migrations:
     runs-on: ubuntu-latest
 
     services:
-      postgres:
+      postgres:                      # <— service name is 'postgres'
         image: postgres:17
         env:
           POSTGRES_USER: postgres
@@ -19,7 +28,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres"
+          --health-cmd "pg_isready -U postgres -d postgres"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 30
@@ -27,8 +36,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install libpq
+      - name: Install psql client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Verify connection
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
+        run: psql "$DATABASE_URL" -c 'select version();'
 
       - name: Run migrations
         env:
@@ -39,3 +53,4 @@ jobs:
         env:
           APP_DB_URL: postgresql://tp_user:tp_password@postgres:5432/postgres
         run: bash scripts/db_smoke.sh
+YAML
