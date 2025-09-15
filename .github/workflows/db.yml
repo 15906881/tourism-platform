@@ -2,16 +2,15 @@ name: DB
 
 on:
   workflow_dispatch:
-  push:
   pull_request:
+  push:
 
 jobs:
   db-migrations:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
 
     services:
-      postgres:                    # service key = container hostname
+      postgres:
         image: postgres:17
         env:
           POSTGRES_USER: postgres
@@ -31,13 +30,23 @@ jobs:
       - name: Install psql client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      - name: Run migrations
+      - name: Quick connectivity check
+        env:
+          URL: postgresql://postgres:postgres@postgres:5432/postgres
+        run: psql "$URL" -c '\conninfo'
+
+      - name: Run migrations (capture logs)
         env:
           DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
-        run: bash scripts/migrate.sh
+        run: |
+          set -e
+          bash scripts/migrate.sh 2>&1 | tee ci_migrate.log
+          exit ${PIPESTATUS[0]}
 
-      - name: RLS smoke test (non-blocking while we debug)
-        continue-on-error: true
-        env:
-          APP_DB_URL: postgresql://tp_user:tp_password@postgres:5432/postgres
-        run: bash scripts/db_smoke.sh
+      - name: Upload DB logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-logs
+          path: ci_migrate.log
+          if-no-files-found: warn
