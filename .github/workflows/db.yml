@@ -2,12 +2,16 @@ name: DB
 
 on:
   workflow_dispatch:
-  pull_request:
   push:
+    branches: [develop, fix/db-ci]
 
 jobs:
   db-migrations:
     runs-on: ubuntu-latest
+
+    # Run the job inside a Linux container that shares a network with services.
+    container:
+      image: ubuntu:24.04
 
     services:
       postgres:
@@ -16,61 +20,46 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d postgres"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 30
+        # NOTE: no 'ports:' when using a job container
 
     steps:
       - uses: actions/checkout@v4
 
-      # 0) Always create a log file so the artifact step has something to upload
-      - name: Init empty log
+      - name: Ensure log file exists (always artifactable)
         run: : > ci_migrate.log
 
-      - name: Install psql client
+      - name: Install psql client & tools
         run: |
-          sudo apt-get update && sudo apt-get install -y postgresql-client \
-          2>&1 | tee -a ci_migrate.log
+          apt-get update -y
+          DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl git postgresql-client
 
-      # 1) Quick context + repo layout to the log
-      - name: Context and tree
+      - name: Connectivity diagnostics
+        shell: bash
         run: |
-          echo "== GITHUB CONTEXT ==" | tee -a ci_migrate.log
-          echo "event=$GITHUB_EVENT_NAME ref=$GITHUB_REF sha=$GITHUB_SHA" | tee -a ci_migrate.log
-          echo "== WORKSPACE TREE ==" | tee -a ci_migrate.log
-          (ls -la && echo && ls -la db || true) | tee -a ci_migrate.log
+          {
+            echo "==> Hostname"
+            hostname
+            echo "==> /etc/hosts"
+            sed -n '1,200p' /etc/hosts
+            echo "==> DNS for 'postgres'"
+            getent hosts postgres || true
+            echo "==> pg_isready raw"
+            pg_isready -h postgres -p 5432 -U postgres -d postgres || true
+          } | tee -a ci_migrate.log
 
-      # 2) Check schema file exists
-      - name: Verify schema presence
-        run: |
-          if [ ! -f db/schema.sql ]; then
-            echo "ERROR: db/schema.sql is missing" | tee -a ci_migrate.log
-            exit 1
-          fi
-          echo "Found db/schema.sql" | tee -a ci_migrate.log
-
-      # 3) Connectivity probe before running migrate.sh
-      - name: Connectivity check
-        env:
-          URL: postgresql://postgres:postgres@postgres:5432/postgres
-        run: |
-          echo "Probing DB with pg_isready + \conninfo..." | tee -a ci_migrate.log
-          pg_isready -h postgres -p 5432 -U postgres -d postgres 2>&1 | tee -a ci_migrate.log
-          psql "$URL" -c '\conninfo' 2>&1 | tee -a ci_migrate.log
-
-      # 4) Run migrations (append to log; preserve exit code)
       - name: Run migrations
         env:
           DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
+        shell: bash
         run: |
           set -o pipefail
-          bash scripts/migrate.sh 2>&1 | tee -a ci_migrate.log
+          bash -x scripts/migrate.sh 2>&1 | tee -a ci_migrate.log
 
-      # 5) Always upload the log, even if something above failed
       - name: Upload DB logs
         if: always()
         uses: actions/upload-artifact@v4
