@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+: "${DATABASE_URL:?DATABASE_URL is required}"
 
-echo "==> psql version"
-psql --version
-echo "==> DATABASE_URL (redacted)"
-echo "${DATABASE_URL}" | sed 's#//[^:]*:[^@]*@#//******@#'
+echo "Applying migrations to ${DATABASE_URL}"
 
-echo "==> Waiting for Postgres on host 'postgres'..."
 ok=0
 for i in {1..60}; do
   if pg_isready -h postgres -p 5432 -U postgres -d postgres >/dev/null 2>&1; then
@@ -19,6 +16,7 @@ for i in {1..60}; do
   printf '  still waiting... (%d/60)\n' "$i"
   sleep 2
 done
+
 if [ "$ok" -ne 1 ]; then
   echo "ERROR: Postgres did not become reachable in time." >&2
   exit 1
