@@ -3,15 +3,11 @@ name: DB
 on:
   workflow_dispatch:
   push:
-    branches: [develop, fix/db-ci]
+    branches: [develop]
 
 jobs:
   db-migrations:
     runs-on: ubuntu-latest
-
-    # Run the job inside a Linux container that shares a network with services.
-    container:
-      image: ubuntu:24.04
 
     services:
       postgres:
@@ -25,7 +21,6 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 30
-        # NOTE: no 'ports:' when using a job container
 
     steps:
       - uses: actions/checkout@v4
@@ -33,22 +28,20 @@ jobs:
       - name: Ensure log file exists (always artifactable)
         run: : > ci_migrate.log
 
-      - name: Install psql client & tools
+      - name: Install psql client
         run: |
-          apt-get update -y
-          DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl git postgresql-client
+          sudo apt-get update -y
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql-client
 
       - name: Connectivity diagnostics
         shell: bash
         run: |
           {
-            echo "==> Hostname"
-            hostname
             echo "==> /etc/hosts"
             sed -n '1,200p' /etc/hosts
             echo "==> DNS for 'postgres'"
             getent hosts postgres || true
-            echo "==> pg_isready raw"
+            echo "==> pg_isready"
             pg_isready -h postgres -p 5432 -U postgres -d postgres || true
           } | tee -a ci_migrate.log
 
@@ -59,6 +52,15 @@ jobs:
         run: |
           set -o pipefail
           bash -x scripts/migrate.sh 2>&1 | tee -a ci_migrate.log
+
+      - name: RLS smoke test (non-blocking)
+        continue-on-error: true
+        env:
+          APP_DB_URL: postgresql://tp_user:tp_password@postgres:5432/postgres
+        shell: bash
+        run: |
+          set -o pipefail
+          bash -x scripts/db_smoke.sh 2>&1 | tee -a ci_migrate.log
 
       - name: Upload DB logs
         if: always()
