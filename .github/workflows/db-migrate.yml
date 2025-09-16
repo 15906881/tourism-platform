@@ -1,15 +1,13 @@
-name: DB
+name: DB Migrate (Neon)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [develop]
 
 permissions:
   contents: read
 
 jobs:
-  db-migrations:
+  migrate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,8 +21,7 @@ jobs:
           fi
           psql --version
 
-      - name: Start log
-        shell: bash
+      - name: Start log file
         run: : > ci_migrate.log
 
       - name: Run migrations against Neon
@@ -35,7 +32,7 @@ jobs:
           set -o pipefail
           bash -x scripts/migrate.sh 2>&1 | tee -a ci_migrate.log
 
-      - name: Smoke test as app (non-blocking)
+      - name: Smoke test (non-blocking)
         if: always()
         env:
           APP_DB_URL: ${{ secrets.APP_DB_URL }}
