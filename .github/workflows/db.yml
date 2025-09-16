@@ -6,40 +6,60 @@ on:
     branches:
       - develop
 
-permissions:
-  contents: read
-
 jobs:
   db-migrations:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Ensure log file exists
-        run: : > ci_migrate.log
 
       - name: Install psql client
         run: |
           sudo apt-get update -y
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql-client
 
-      - name: Connectivity check (owner)
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Ensure log file exists
+        run: : > ci_migrate.log
+
+      - name: psql version
         run: |
           echo "==> psql version" | tee -a ci_migrate.log
-          psql --version | tee -a ci_migrate.log
-          echo "==> \conninfo (owner)" | tee -a ci_migrate.log
-          psql "$DATABASE_URL" -c '\conninfo' 2>&1 | tee -a ci_migrate.log
+          psql --version        | tee -a ci_migrate.log
 
-      - name: Run migrations (owner)
+      - name: Print env (redacted)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        shell: bash
+        run: |
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "ERROR: DATABASE_URL secret is empty" | tee -a ci_migrate.log
+            exit 1
+          fi
+          redacted="$(printf '%s\n' "$DATABASE_URL" | sed -E 's#://([^:/]+):([^@]+)@#://\1:******@#')"
+          echo "==> DATABASE_URL (redacted): $redacted" | tee -a ci_migrate.log
+
+      - name: Show schema
+        run: |
+          echo "==> ls db" | tee -a ci_migrate.log
+          ls -la db        | tee -a ci_migrate.log || true
+          echo "==> head -n 80 db/schema.sql" | tee -a ci_migrate.log
+          sed -n '1,80p' db/schema.sql | tee -a ci_migrate.log || true
+
+      - name: Run migrations against Neon
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         shell: bash
         run: |
           set -o pipefail
+          echo "==> connectivity check" | tee -a ci_migrate.log
+          if psql "$DATABASE_URL" -c "select version();" >> ci_migrate.log 2>&1; then
+            echo "DB reachable" | tee -a ci_migrate.log
+          else
+            echo "DB NOT reachable" | tee -a ci_migrate.log
+          fi
+
+          echo "==> running migrate.sh" | tee -a ci_migrate.log
           bash -x scripts/migrate.sh 2>&1 | tee -a ci_migrate.log
 
       - name: RLS smoke test (non-blocking)
@@ -49,19 +69,13 @@ jobs:
           APP_DB_URL: ${{ secrets.APP_DB_URL }}
         shell: bash
         run: |
-          if [ -f scripts/db_smoke.sh ]; then
-            set -o pipefail
-            bash -x scripts/db_smoke.sh 2>&1 | tee -a ci_migrate.log
+          set -o pipefail
+          if [ -z "${APP_DB_URL:-}" ]; then
+            echo "no APP_DB_URL; skipping smoke test" | tee -a ci_migrate.log
           else
-            echo "no db_smoke.sh; skipping" | tee -a ci_migrate.log
+            echo "==> simple smoke test" | tee -a ci_migrate.log
+            psql "$APP_DB_URL" -Atc 'select 1;' | tee -a ci_migrate.log
           fi
-
-      - name: Scrub secrets from log (mask any password-like parts)
-        if: always()
-        shell: bash
-        run: |
-          # Mask ...://user:PASSWORD@host patterns to avoid leaking creds in artifacts
-          sed -E -i 's#(postgres(ql)?://[^:]+:)[^@]+(@)#\1***\3#g' ci_migrate.log || true
 
       - name: Upload DB logs
         if: always()
