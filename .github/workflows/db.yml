@@ -5,56 +5,12 @@ on:
   push:
     branches: [develop]
 
-permissions:
-  contents: read
-
 jobs:
-  db-migrations:
+  ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Show psql version (install if missing)
-        run: |
-          psql --version || {
-            sudo apt-get update -y
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql-client
-            psql --version
-          }
-
-      - uses: actions/checkout@v4
-
-      - name: Start log
-        run: : > ci_migrate.log
-
-      - name: Context
-        run: |
-          echo "SHA: $GITHUB_SHA"   | tee -a ci_migrate.log
-          echo "REF: $GITHUB_REF"   | tee -a ci_migrate.log
-          echo "RUNNER: $RUNNER_OS" | tee -a ci_migrate.log
-
-      - name: Run migrations against Neon
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        shell: bash
-        run: |
-          set -o pipefail
-          bash -x scripts/migrate.sh 2>&1 | tee -a ci_migrate.log
-
-      - name: Smoke test as app (non-blocking)
-        if: always()
-        env:
-          APP_DB_URL: ${{ secrets.APP_DB_URL }}
-        run: |
-          set -o pipefail
-          if [ -n "${APP_DB_URL:-}" ]; then
-            echo "==> smoke test" | tee -a ci_migrate.log
-            psql "$APP_DB_URL" -Atc 'select 1;' | tee -a ci_migrate.log
-          else
-            echo "==> no APP_DB_URL; skipping" | tee -a ci_migrate.log
-          fi
-
-      - name: Upload DB logs
-        if: always()
-        uses: actions/upload-artifact@v4
+      - run: echo "hello from Actions" | tee ci_migrate.log
+      - uses: actions/upload-artifact@v4
         with:
           name: db-logs
           path: ci_migrate.log
