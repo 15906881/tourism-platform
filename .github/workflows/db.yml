@@ -8,24 +8,10 @@ on:
 jobs:
   db-migrations:
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        options: >-
-          --health-cmd "pg_isready -U postgres -d postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 30
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Ensure log file exists (always artifactable)
+      - name: Ensure log file exists
         run: : > ci_migrate.log
 
       - name: Install psql client
@@ -33,34 +19,27 @@ jobs:
           sudo apt-get update -y
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql-client
 
-      - name: Connectivity diagnostics
-        shell: bash
-        run: |
-          {
-            echo "==> /etc/hosts"
-            sed -n '1,200p' /etc/hosts
-            echo "==> DNS for 'postgres'"
-            getent hosts postgres || true
-            echo "==> pg_isready"
-            pg_isready -h postgres -p 5432 -U postgres -d postgres || true
-          } | tee -a ci_migrate.log
-
-      - name: Run migrations
+      - name: Run migrations against Neon
         env:
-          DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         shell: bash
         run: |
           set -o pipefail
           bash -x scripts/migrate.sh 2>&1 | tee -a ci_migrate.log
 
       - name: RLS smoke test (non-blocking)
+        if: always()
         continue-on-error: true
         env:
-          APP_DB_URL: postgresql://tp_user:tp_password@postgres:5432/postgres
+          APP_DB_URL: ${{ secrets.APP_DB_URL }}
         shell: bash
         run: |
-          set -o pipefail
-          bash -x scripts/db_smoke.sh 2>&1 | tee -a ci_migrate.log
+          if [ -f scripts/db_smoke.sh ]; then
+            set -o pipefail
+            bash -x scripts/db_smoke.sh 2>&1 | tee -a ci_migrate.log
+          else
+            echo "no db_smoke.sh; skipping" | tee -a ci_migrate.log
+          fi
 
       - name: Upload DB logs
         if: always()
