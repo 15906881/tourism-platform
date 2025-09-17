@@ -3,6 +3,7 @@
 Use this PR to collect final edits and sign-offs.
 
 ## Checklist
+
 - [ ] Technical Architecture v4 — final pass & sign-off
 - [ ] System Architecture V4 — diagrams & flows complete
 - [ ] Onboarding User Journey v1 — UX acceptance
