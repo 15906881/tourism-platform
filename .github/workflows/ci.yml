@@ -1,7 +1,7 @@
 name: CI
 
 on:
-  workflow_dispatch: {}   # lets you run it from the Actions UI
+  workflow_dispatch: {}     # manual "Run workflow" button
   pull_request:
     branches: [ main, develop ]
   push:
@@ -26,6 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - name: Install markdownlint-cli
         run: npm i -g markdownlint-cli@0.41.0
       - name: Run markdownlint
@@ -34,31 +37,48 @@ jobs:
   node-qa:
     name: Node QA (lint/format) — advisory if present
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('package.json') != '' }}   # only run if you actually have a Node project
     steps:
       - uses: actions/checkout@v4
+
+      - name: Detect Node project
+        id: detect
+        run: |
+          if [ -f package.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-node@v4
+        if: steps.detect.outputs.present == 'true'
         with:
           node-version: 20
+
       - name: Install deps
+        if: steps.detect.outputs.present == 'true'
         run: |
           if [ -f package-lock.json ]; then
-            npm ci || echo "npm ci failed (advisory)"; exit 0
+            npm ci || true
           else
-            npm install || echo "npm install failed (advisory)"; exit 0
+            npm install || true
           fi
+
       - name: Format check
-        run: npm run format:check || echo "format:check advisory"
+        if: steps.detect.outputs.present == 'true'
+        run: npm run format:check || true
+
       - name: Lint check
-        run: npm run lint:check || echo "lint:check advisory"
+        if: steps.detect.outputs.present == 'true'
+        run: npm run lint:check || true
+
+      - name: No Node project — skip
+        if: steps.detect.outputs.present != 'true'
+        run: echo "No package.json found; skipping Node QA."
 
   build:
     name: Build (placeholder)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
       - name: Build placeholder
         run: echo "Build OK (placeholder)"
