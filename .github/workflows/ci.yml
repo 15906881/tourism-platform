@@ -39,8 +39,8 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-      - run: npm run lint || true
       - run: npm run format:check
+      - run: npm run lint || true
 
   build:
     name: Build (placeholder)
