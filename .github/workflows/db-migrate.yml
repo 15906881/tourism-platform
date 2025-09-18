@@ -25,7 +25,7 @@ jobs:
           psql --version
           
       - name: Start log file     
-        run: : > ci_migrate.log
+        run: ": > ci_migrate.log"
         
       - name: Run migrations against Neon
         env:
