@@ -1,5 +1,6 @@
 # API workflow for tourism platform
 name: API
+
 on:
   pull_request:
   workflow_dispatch:
@@ -12,44 +13,79 @@ jobs:
         image: postgres:17
         env:
           POSTGRES_PASSWORD: postgres
-        ports: ["5432:5432"]
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - "5432:5432"
         options: >-
           --health-cmd="pg_isready -U postgres"
-          --health-interval=5s --health-timeout=5s --health-retries=10
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Install tools
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client jq
-
+          
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Install deps
+          cache: 'npm'
+          
+      - name: Install dependencies
         run: npm ci
-
+        
+      - name: Setup database user
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -c "CREATE USER tp_user WITH PASSWORD 'tp_password';"
+          psql -h localhost -U postgres -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE postgres TO tp_user;"
+          psql -h localhost -U postgres -d postgres -c "ALTER USER tp_user CREATEDB;"
+        
       - name: Run DB migrations
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
         run: bash scripts/migrate.sh
-
+        
       - name: Start API (background)
         env:
           APP_DB_URL: postgresql://tp_user:tp_password@localhost:5432/postgres
+          NODE_ENV: test
         run: |
-          node api/server.js & echo $! > api.pid
-          # wait for /health
-          timeout 30 bash -c 'until curl -sf http://localhost:3000/health >/dev/null; do sleep 0.5; done'
-
-      - name: Smoke: /users for demo tenant includes demo admin
+          node api/server.js &
+          echo $! > api.pid
+          # Wait for health check endpoint
+          timeout 60 bash -c 'until curl -sf http://localhost:3000/health >/dev/null 2>&1; do echo "Waiting for API..."; sleep 1; done'
+          echo "API is ready"
+          
+      - name: Smoke test - Check /users endpoint for demo tenant
         run: |
+          echo "Testing /users endpoint..."
           RESP="$(curl -s "http://localhost:3000/users?tenant=demo")"
+          echo "Response received:"
           echo "$RESP" | jq .
+          echo "Validating response structure..."
           echo "$RESP" | jq -e 'type=="array" and length>=1 and any(.[]; .email=="demo@local.test")'
-
+          echo "Smoke test passed!"
+          
       - name: Stop API
         if: always()
-        run: kill "$(cat api.pid)" || true
+        run: |
+          if [ -f api.pid ]; then
+            PID=$(cat api.pid)
+            if kill -0 "$PID" 2>/dev/null; then
+              echo "Stopping API process $PID"
+              kill "$PID" || true
+              sleep 2
+              # Force kill if still running
+              if kill -0 "$PID" 2>/dev/null; then
+                kill -9 "$PID" || true
+              fi
+            fi
+            rm -f api.pid
+          fi
