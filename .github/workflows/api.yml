@@ -1,1 +1,157 @@
-[copy optimized API workflow from artifact]
+name: API
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [develop, main]
+    paths: 
+      - 'api/**'
+      - 'scripts/**'
+      - '.github/workflows/api.yml'
+      - 'package*.json'
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'api/**'
+      - 'scripts/**'
+      - '.github/workflows/api.yml'
+      - 'package*.json'
+
+jobs:
+  api-smoke:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client jq
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            api/package-lock.json
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Setup database user
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres -c "CREATE USER tp_user WITH PASSWORD 'tp_password';"
+          psql -h localhost -U postgres -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE postgres TO tp_user;"
+          psql -h localhost -U postgres -d postgres -c "ALTER USER tp_user CREATEDB;"
+        
+      - name: Run DB migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+        run: bash scripts/migrate.sh
+        
+      - name: Start API (background)
+        env:
+          APP_DB_URL: postgresql://tp_user:tp_password@localhost:5432/postgres
+          NODE_ENV: test
+        run: |
+          node api/server.js &
+          echo $! > api.pid
+          timeout 60 bash -c 'until curl -sf http://localhost:3000/health >/dev/null 2>&1; do echo "Waiting for API...
+# Complete the db-migrate.yml replacement
+cat > .github/workflows/db-migrate.yml << 'EOF'
+name: DB Migrate (Neon)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "migrate" to confirm database migration'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Validate confirmation
+        if: github.event.inputs.confirm != 'migrate'
+        run: |
+          echo "Migration not confirmed. Please type 'migrate' in the confirmation field."
+          exit 1
+          
+      - uses: actions/checkout@v4
+      
+      - name: Ensure psql client
+        shell: bash
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -y
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql-client
+          fi
+          psql --version
+          
+      - name: Initialize log file
+        run: ": > ci_migrate.log"
+        
+      - name: Validate environment
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        shell: bash
+        run: |
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "DATABASE_URL secret is not set" | tee -a ci_migrate.log
+            exit 1
+          fi
+          echo "Environment validation passed" | tee -a ci_migrate.log
+          
+      - name: Run migrations against Neon
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        shell: bash
+        run: |
+          set -o pipefail
+          echo "Starting migrations..." | tee -a ci_migrate.log
+          if bash -x scripts/migrate.sh 2>&1 | tee -a ci_migrate.log; then
+            echo "Migrations completed successfully" | tee -a ci_migrate.log
+          else
+            echo "Migration failed with exit code $?" | tee -a ci_migrate.log
+            exit 1
+          fi
+          
+      - name: Upload migration logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-migration-logs-${{ github.run_id }}
+          path: ci_migrate.log
+          retention-days: 30
+          if-no-files-found: warn
