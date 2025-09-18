@@ -1,1 +1,59 @@
-[copy optimized CI workflow from artifact]
+name: CI
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [develop, main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  pull_request:
+    branches: [develop, main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            api/package-lock.json
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Check if scripts exist
+        run: |
+          if npm run | grep -q "lint"; then
+            npm run lint
+          else
+            echo "No lint script found, skipping"
+          fi
+          
+          if npm run | grep -q "test"; then
+            npm run test
+          else
+            echo "No test script found, skipping"
+          fi
+          
+          if npm run | grep -q "build"; then
+            npm run build
+          else
+            echo "No build script found, skipping"
+          fi
