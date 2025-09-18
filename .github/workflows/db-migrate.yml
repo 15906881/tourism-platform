@@ -1,1 +1,41 @@
-[copy manual DB migrate workflow from previous artifact]
+name: DB Migrate (Neon)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "migrate" to confirm database migration'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Validate confirmation
+        if: github.event.inputs.confirm != 'migrate'
+        run: |
+          echo "Migration not confirmed. Please type 'migrate' in the confirmation field."
+          exit 1
+          
+      - uses: actions/checkout@v4
+      
+      - name: Ensure psql client
+        run: |
+          sudo apt-get update -y
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql-client
+          psql --version
+          
+      - name: Run migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "DATABASE_URL secret is not set"
+            exit 1
+          fi
+          echo "Migration would run here - placeholder for now"
