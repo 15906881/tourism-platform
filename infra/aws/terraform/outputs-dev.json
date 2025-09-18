@@ -1,0 +1,60 @@
+{
+  "db_subnet_group_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "tourism-platform-dev-db-subnets"
+  },
+  "lambda_security_group_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "sg-024af36d9119bbcf1"
+  },
+  "private_subnet_ids": {
+    "sensitive": false,
+    "type": [
+      "tuple",
+      [
+        "string",
+        "string"
+      ]
+    ],
+    "value": [
+      "subnet-0bc83ec05e868f4c8",
+      "subnet-058ebc474cda37064"
+    ]
+  },
+  "public_subnet_ids": {
+    "sensitive": false,
+    "type": [
+      "tuple",
+      [
+        "string",
+        "string"
+      ]
+    ],
+    "value": [
+      "subnet-07dfc6f59e815e346",
+      "subnet-0d0b2717c877a40d0"
+    ]
+  },
+  "rds_security_group_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "sg-03fd83c5a73dfc37f"
+  },
+  "vpc_endpoint_dynamodb_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "vpce-0b2de4a3234a4dba2"
+  },
+  "vpc_endpoint_s3_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "vpce-0b8b86f5986916b8f"
+  },
+  "vpc_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "vpc-06c3e91db56bf73a8"
+  }
+}
