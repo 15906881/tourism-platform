@@ -11,9 +11,10 @@ permissions:
 jobs:
   migrate:
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Ensure psql client
         shell: bash
         run: |
@@ -22,10 +23,10 @@ jobs:
             sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql-client
           fi
           psql --version
-
+          
       - name: Start log file
         run: : > ci_migrate.log
-
+        
       - name: Run migrations against Neon
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -33,7 +34,7 @@ jobs:
         run: |
           set -o pipefail
           bash -x scripts/migrate.sh 2>&1 | tee -a ci_migrate.log
-
+          
       - name: Smoke test (non-blocking)
         if: always()
         env:
@@ -47,7 +48,7 @@ jobs:
           else
             echo "==> no APP_DB_URL; skipping" | tee -a ci_migrate.log
           fi
-
+          
       - name: Upload DB logs
         if: always()
         uses: actions/upload-artifact@v4
