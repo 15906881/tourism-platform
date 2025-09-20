@@ -1,9 +1,8 @@
-// api/server.js  — COMPLETE FILE (includes /test/:id)
+// api/server.js — COMPLETE FILE with route dump + JSON 404 + /test/:id
 
 const express = require("express");
 const { Pool } = require("pg");
 
-// Connection string (we pass it via APP_DB_URL when starting the server)
 const dbUrl =
   process.env.APP_DB_URL ||
   process.env.DATABASE_URL ||
@@ -14,8 +13,7 @@ const pool = new Pool({ connectionString: dbUrl });
 const app = express();
 app.use(express.json());
 
-// --- helpers -------------------------------------------------------------
-
+// ---------- helpers ----------
 function getTenantName(req) {
   return req.query.tenant || req.header("X-Tenant");
 }
@@ -24,7 +22,6 @@ async function withTenant(tenantName, fn) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    // Set tenant in this transaction only (is_local = true)
     await client.query(
       "SELECT set_config('app.tenant_id',(SELECT id::text FROM core.tenants WHERE name=$1), true)",
       [tenantName]
@@ -40,9 +37,7 @@ async function withTenant(tenantName, fn) {
   }
 }
 
-// --- routes --------------------------------------------------------------
-
-// Health (DB reachability)
+// ---------- routes ----------
 app.get("/health", async (_req, res) => {
   try {
     const { rows } = await pool.query("SELECT version() AS v");
@@ -52,7 +47,6 @@ app.get("/health", async (_req, res) => {
   }
 });
 
-// Create tenant { name }
 app.post("/tenants", async (req, res) => {
   try {
     const { name } = req.body || {};
@@ -70,7 +64,6 @@ app.post("/tenants", async (req, res) => {
   }
 });
 
-// Create user in a tenant: POST /users?tenant=demo  { email, role }
 app.post("/users", async (req, res) => {
   const tenantName = getTenantName(req);
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
@@ -89,7 +82,6 @@ app.post("/users", async (req, res) => {
       const { rows } = await client.query(q, [email, role, tenantName]);
       if (rows[0]) return rows[0];
 
-      // If already existed, just read it
       const { rows: r2 } = await client.query(
         "SELECT id, email, role FROM core.users WHERE email=$1",
         [email]
@@ -102,14 +94,12 @@ app.post("/users", async (req, res) => {
   }
 });
 
-// List users in a tenant (RLS enforced)
 app.get("/users", async (req, res) => {
   const tenantName = getTenantName(req);
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
 
   try {
     const rows = await withTenant(tenantName, async (client) => {
-      // Use the compatibility view built during migrations
       const { rows } = await client.query(
         "SELECT account_id AS id, email, role FROM core.users_v ORDER BY email"
       );
@@ -121,7 +111,6 @@ app.get("/users", async (req, res) => {
   }
 });
 
-// List templates (union of base template + per-tenant overrides)
 app.get("/templates", async (req, res) => {
   const tenantName = getTenantName(req);
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
@@ -147,7 +136,6 @@ app.get("/templates", async (req, res) => {
   }
 });
 
-// Single template with optional per-tenant overrides merged
 app.get("/templates/:key", async (req, res) => {
   const tenantName = getTenantName(req);
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
@@ -175,8 +163,6 @@ app.get("/templates/:key", async (req, res) => {
   }
 });
 
-// Upsert tenant template override:
-// POST /tenant-templates?tenant=acme { template_key, enabled, overrides }
 app.post("/tenant-templates", async (req, res) => {
   const tenantName = getTenantName(req);
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
@@ -213,7 +199,6 @@ app.post("/tenant-templates", async (req, res) => {
   }
 });
 
-// List tenant overrides
 app.get("/tenant-templates", async (req, res) => {
   const tenantName = getTenantName(req);
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
@@ -235,14 +220,30 @@ app.get("/tenant-templates", async (req, res) => {
   }
 });
 
-// --- test route (helps confirm parameter routes are working) --------------
+// ---- test route (MUST be before 404) ----
 app.get("/test/:id", (req, res) => {
   res.json({ message: "test route works", id: req.params.id });
 });
 
-// JSON 404 (avoid HTML error pages that break jq)
+// ---- JSON 404 ----
 app.use((req, res) => {
   res.status(404).json({ error: "not found", path: req.path });
+});
+
+// Dump routes on startup to verify registration
+setImmediate(() => {
+  const routes = [];
+  (app._router?.stack || []).forEach((m) => {
+    if (m.route) {
+      const methods = Object.keys(m.route.methods)
+        .map((k) => k.toUpperCase())
+        .join(",");
+      routes.push(`${methods} ${m.route.path}`);
+    }
+  });
+  console.log("cwd:", process.cwd());
+  console.log("file:", __filename);
+  console.log("Registered routes:", routes);
 });
 
 const port = process.env.PORT || 3000;
