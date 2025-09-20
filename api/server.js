@@ -2,7 +2,10 @@ const express = require("express");
 const { Pool } = require("pg");
 
 // Use APP_DB_URL in CI; fall back to local superuser for dev.
-const dbUrl = process.env.APP_DB_URL || process.env.DATABASE_URL || "postgresql:///postgres";
+const dbUrl =
+  process.env.APP_DB_URL ||
+  process.env.DATABASE_URL ||
+  "postgresql:///postgres";
 const pool = new Pool({ connectionString: dbUrl });
 
 const app = express();
@@ -19,6 +22,7 @@ app.get("/health", async (req, res) => {
 });
 
 // GET /users?tenant=demo  (or header X-Tenant: demo)
+// Now reads from compatibility view core.users_v (backed by accounts+memberships).
 app.get("/users", async (req, res) => {
   const tenantName = req.query.tenant || req.header("X-Tenant");
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
@@ -26,18 +30,32 @@ app.get("/users", async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    // Set tenant for this transaction only (is_local=true)
-    await client.query(
-      "SELECT set_config('app.tenant_id',(SELECT id::text FROM core.tenants WHERE name=$1), true)",
+
+    // Resolve tenant id first so we can fail fast if it's unknown.
+    const t = await client.query(
+      "select id from core.tenants where name = $1",
       [tenantName]
     );
-    const { rows } = await client.query("SELECT id, email, role FROM core.users ORDER BY email");
+    if (t.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: `Tenant not found: ${tenantName}` });
+    }
+
+    // Set tenant for this transaction only (is_local=true) so RLS applies.
+    await client.query(
+      "select set_config('app.tenant_id', $1, true)",
+      [t.rows[0].id]
+    );
+
+    // Keep same response shape as before: id, email, role
+    const { rows } = await client.query(
+      "select account_id as id, email, role from core.users_v order by email"
+    );
+
     await client.query("COMMIT");
     res.json(rows);
   } catch (e) {
-    try {
-      await client.query("ROLLBACK");
-    } catch {}
+    try { await client.query("ROLLBACK"); } catch {}
     res.status(500).json({ error: e.message });
   } finally {
     client.release();
