@@ -1,18 +1,24 @@
 const express = require("express");
 const { Pool } = require("pg");
 
-// Use APP_DB_URL in CI; fall back to local superuser for dev.
+// Prefer APP_DB_URL (CI/containers). Fallbacks for local dev.
+// If the URL has sslmode=require or ssl=true, enable TLS in pg client.
 const dbUrl =
   process.env.APP_DB_URL ||
   process.env.DATABASE_URL ||
   "postgresql:///postgres";
-const pool = new Pool({ connectionString: dbUrl });
+
+const mustSSL = /sslmode=require|ssl=true/i.test(dbUrl);
+const pool = new Pool({
+  connectionString: dbUrl,
+  ssl: mustSSL ? { rejectUnauthorized: false } : undefined,
+});
 
 const app = express();
 app.use(express.json());
 
-// Simple health with DB check
-app.get("/health", async (req, res) => {
+// Health check with DB probe
+app.get("/health", async (_req, res) => {
   try {
     const { rows } = await pool.query("select version() as v");
     res.json({ ok: true, db: rows[0].v });
@@ -21,8 +27,8 @@ app.get("/health", async (req, res) => {
   }
 });
 
-// GET /users?tenant=demo  (or header X-Tenant: demo)
-// Now reads from compatibility view core.users_v (backed by accounts+memberships).
+// GET /users?tenant=demo   or   header: X-Tenant: demo
+// Reads from compatibility view core.users_v (accounts + memberships).
 app.get("/users", async (req, res) => {
   const tenantName = req.query.tenant || req.header("X-Tenant");
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
@@ -31,7 +37,7 @@ app.get("/users", async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    // Resolve tenant id first so we can fail fast if it's unknown.
+    // Resolve tenant id; fail fast if not found.
     const t = await client.query(
       "select id from core.tenants where name = $1",
       [tenantName]
@@ -41,13 +47,13 @@ app.get("/users", async (req, res) => {
       return res.status(404).json({ error: `Tenant not found: ${tenantName}` });
     }
 
-    // Set tenant for this transaction only (is_local=true) so RLS applies.
+    // Set tenant for this transaction only so RLS applies.
     await client.query(
       "select set_config('app.tenant_id', $1, true)",
       [t.rows[0].id]
     );
 
-    // Keep same response shape as before: id, email, role
+    // Keep the same shape as before: id, email, role
     const { rows } = await client.query(
       "select account_id as id, email, role from core.users_v order by email"
     );
