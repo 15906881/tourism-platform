@@ -1,59 +1,74 @@
 name: db: verify migrations
+
 on:
-  pull_request: { branches: [develop, main] }
+  pull_request:
+    branches: [ develop, main ]
   workflow_dispatch: {}
 
 jobs:
   verify:
     runs-on: ubuntu-latest
+
     services:
       postgres:
         image: postgres:15
-        env: { POSTGRES_PASSWORD: postgres }
-        ports: ["5432:5432"]
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd="pg_isready -U postgres"
-          --health-interval=5s --health-timeout=5s --health-retries=20
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
 
     steps:
-      - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - env: { PGPASSWORD: postgres }
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install psql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Wait for Postgres
+        env: { PGPASSWORD: postgres }
         run: |
           until pg_isready -h localhost -p 5432 -U postgres; do sleep 1; done
+          psql -h localhost -U postgres -c 'select version();'
 
-          # apply migrations in order
+      - name: Apply migrations in order
+        env: { PGPASSWORD: postgres }
+        run: |
           shopt -s nullglob
           for f in database/migrations/*.sql; do
             echo ">> applying $f"
             psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f "$f"
           done
 
-          # RLS smoke: two tenants, each sees only its rows
-          psql -h localhost -U postgres -d postgres <<'SQL'
-          -- make two tenants
-          insert into app.tenant(code,name)
-          values ('t1','Tenant One'), ('t2','Tenant Two')
-          on conflict (code) do nothing;
+      - name: RLS smoke test with non-superuser (tp_user)
+        env: { PGPASSWORD: tp_password }
+        run: |
+          # create two tenants
+          psql -h localhost -U tp_user -d postgres <<'SQL'
+          insert into core.tenants(name) values ('t1'), ('t2')
+          on conflict (name) do nothing;
 
-          -- insert a row for each tenant with the correct session setting
-          select set_config('app.tenant_id', (select id::text from app.tenant where code='t1'), false);
-          insert into app.hello(tenant_id, msg)
-            values ((select id from app.tenant where code='t1'), 'hello t1');
+          -- set tenant to t1 and insert/select
+          select set_config('app.tenant_id', (select id::text from core.tenants where name='t1'), false);
+          insert into core.hello(tenant_id, msg)
+            values ((select id from core.tenants where name='t1'), 'hi from t1')
+          on conflict do nothing;
+          select count(*) = 1 as only_t1_visible from core.hello;
 
-          select set_config('app.tenant_id', (select id::text from app.tenant where code='t2'), false);
-          insert into app.hello(tenant_id, msg)
-            values ((select id from app.tenant where code='t2'), 'hello t2');
+          -- switch to t2 and verify isolation
+          select set_config('app.tenant_id', (select id::text from core.tenants where name='t2'), false);
+          insert into core.hello(tenant_id, msg)
+            values ((select id from core.tenants where name='t2'), 'hi from t2')
+          on conflict do nothing;
+          select count(*) = 1 as only_t2_visible from core.hello;
 
-          -- t1 can only see its own
-          select set_config('app.tenant_id', (select id::text from app.tenant where code='t1'), false);
-          select count(*) = 1 as only_t1 from app.hello;
-
-          -- t2 can only see its own
-          select set_config('app.tenant_id', (select id::text from app.tenant where code='t2'), false);
-          select count(*) = 1 as only_t2 from app.hello;
-
-          -- without a tenant set, access is denied by policy (expect 0 rows)
+          -- unset tenant -> expect 0 visible rows due to RLS
           select set_config('app.tenant_id', null, false);
-          select count(*) = 0 as no_access from app.hello where true;
+          select count(*) = 0 as no_access_without_tenant from core.hello where true;
           SQL
