@@ -9,14 +9,14 @@ const dbUrl =
   process.env.DATABASE_URL ||
   "postgresql:///postgres";
 
-// If sslmode=require is in the URL, pg will use TLS. Respect NODE_TLS_REJECT_UNAUTHORIZED=0 for the local tunnel.
+// If sslmode=require is in the URL, pg will use TLS.
+// Honor NODE_TLS_REJECT_UNAUTHORIZED=0 for the local tunnel.
 const ssl =
   /sslmode=require/.test(dbUrl)
     ? { rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0" }
     : undefined;
 
 const pool = new Pool({ connectionString: dbUrl, ssl });
-
 const app = express();
 app.use(express.json());
 
@@ -30,7 +30,6 @@ async function withTenant(tenantName, fn) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    // set_config is_local=true so the setting is scoped to this transaction
     await client.query(
       `
       SELECT set_config(
@@ -41,7 +40,6 @@ async function withTenant(tenantName, fn) {
     `,
       [tenantName]
     );
-    // Ensure tenant existed
     const { rows: chk } = await client.query(
       `SELECT current_setting('app.tenant_id', true) AS tid`
     );
@@ -50,7 +48,6 @@ async function withTenant(tenantName, fn) {
       err.status = 404;
       throw err;
     }
-
     const result = await fn(client);
     await client.query("COMMIT");
     return result;
@@ -61,14 +58,13 @@ async function withTenant(tenantName, fn) {
     client.release();
   }
 }
-
 function pickTenant(req) {
   return req.query.tenant || req.header("X-Tenant");
 }
 
 // ---------- routes ----------
 
-// Health + DB check
+// Health
 app.get("/health", async (_req, res) => {
   try {
     const { rows } = await pool.query("select version() as v");
@@ -98,7 +94,7 @@ app.post("/tenants", async (req, res) => {
   }
 });
 
-// List users for tenant (via users_v view)
+// List users in tenant
 app.get("/users", async (req, res) => {
   try {
     const tenantName = pickTenant(req);
@@ -119,7 +115,7 @@ app.get("/users", async (req, res) => {
   }
 });
 
-// Create a user (account + membership) inside a tenant
+// Create/Upsert user in tenant
 app.post("/users", async (req, res) => {
   try {
     const tenantName = pickTenant(req);
@@ -127,7 +123,6 @@ app.post("/users", async (req, res) => {
     if (!email) return res.status(400).json({ error: "email is required" });
 
     const row = await withTenant(tenantName, async (client) => {
-      // Upsert account by global-unique email
       const acc = await client.query(
         `
         INSERT INTO core.accounts(email)
@@ -137,8 +132,6 @@ app.post("/users", async (req, res) => {
       `,
         [email]
       );
-
-      // Upsert membership for this tenant
       const mem = await client.query(
         `
         INSERT INTO core.memberships(account_id, tenant_id, role)
@@ -149,7 +142,6 @@ app.post("/users", async (req, res) => {
       `,
         [acc.rows[0].id, role]
       );
-
       return { id: mem.rows[0].id, email: acc.rows[0].email, role: mem.rows[0].role };
     });
 
@@ -159,7 +151,7 @@ app.post("/users", async (req, res) => {
   }
 });
 
-// List templates for tenant with overrides (no deep-merge here; return base + overrides)
+// List all templates for tenant (with overrides)
 app.get("/templates", async (req, res) => {
   try {
     const tenantName = pickTenant(req);
@@ -184,12 +176,11 @@ app.get("/templates", async (req, res) => {
   }
 });
 
-// Single template (with overrides + a shallow merged "content_merged")
+// Single template (with shallow merged content)
 app.get("/templates/:key", async (req, res) => {
   try {
     const tenantName = pickTenant(req);
     const { key } = req.params;
-
     const row = await withTenant(tenantName, async (client) => {
       const q = `
         SELECT
@@ -197,7 +188,6 @@ app.get("/templates/:key", async (req, res) => {
           t.content,
           COALESCE(tt.overrides, '{}'::jsonb) AS overrides,
           COALESCE(tt.enabled, true) AS enabled,
-          -- shallow jsonb merge: tenant overrides take precedence
           (t.content || COALESCE(tt.overrides, '{}'::jsonb)) AS content_merged
         FROM core.templates t
         LEFT JOIN core.tenant_templates tt
@@ -208,7 +198,6 @@ app.get("/templates/:key", async (req, res) => {
       const { rows } = await client.query(q, [key]);
       return rows[0];
     });
-
     if (!row) return res.status(404).json({ error: `template not found: ${key}` });
     res.json(row);
   } catch (e) {
@@ -216,7 +205,7 @@ app.get("/templates/:key", async (req, res) => {
   }
 });
 
-// List tenant-specific template overrides
+// List tenant overrides
 app.get("/tenant-templates", async (req, res) => {
   try {
     const tenantName = pickTenant(req);
@@ -244,7 +233,7 @@ app.get("/tenant-templates", async (req, res) => {
   }
 });
 
-// Upsert a tenant override
+// Upsert tenant override
 app.post("/tenant-templates", async (req, res) => {
   try {
     const tenantName = pickTenant(req);
@@ -252,14 +241,12 @@ app.post("/tenant-templates", async (req, res) => {
     if (!template_key) return res.status(400).json({ error: "template_key is required" });
 
     const row = await withTenant(tenantName, async (client) => {
-      // Resolve template id
       const tid = await client.query(`SELECT id FROM core.templates WHERE key = $1`, [template_key]);
       if (!tid.rows[0]) {
         const err = new Error(`template not found: ${template_key}`);
         err.status = 404;
         throw err;
       }
-
       const { rows } = await client.query(
         `
         INSERT INTO core.tenant_templates(tenant_id, template_id, enabled, overrides)
@@ -287,7 +274,7 @@ app.post("/tenant-templates", async (req, res) => {
   }
 });
 
-// Delete a tenant override
+// Delete tenant override
 app.delete("/tenant-templates", async (req, res) => {
   try {
     const tenantName = pickTenant(req);
@@ -316,6 +303,11 @@ app.delete("/tenant-templates", async (req, res) => {
   } catch (e) {
     res.status(e.status || 500).json({ error: e.message });
   }
+});
+
+// JSON 404 for unknown routes (prevents plain text)
+app.use((req, res) => {
+  res.status(404).json({ error: "not found", path: req.path });
 });
 
 // ---------- start ----------
