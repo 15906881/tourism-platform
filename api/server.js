@@ -39,11 +39,11 @@ async function setTenantContext(client, tenantName) {
   return tenantId;
 }
 
-function shallowMerge(objA, objB) {
-  if (!objA && !objB) return {};
-  if (!objA) return objB;
-  if (!objB) return objA;
-  return { ...objA, ...objB }; // simple top-level merge
+function shallowMerge(a, b) {
+  if (!a && !b) return {};
+  if (!a) return b;
+  if (!b) return a;
+  return { ...a, ...b }; // top-level merge
 }
 
 // ---------- Users (read) ----------
@@ -144,7 +144,6 @@ app.get("/templates", async (req, res) => {
     await client.query("BEGIN");
     const tenantId = await setTenantContext(client, tenantName);
 
-    // Ensure a row exists in tenant_templates for every template (default enabled=true, {})
     await client.query(
       `insert into core.tenant_templates(tenant_id, template_id, enabled, overrides)
        select $1, t.id, true, '{}'::jsonb
@@ -170,7 +169,7 @@ app.get("/templates", async (req, res) => {
       name: r.name,
       category: r.category,
       version: r.version,
-      content: r.content,       // base content only (not merged here)
+      content: r.content,
       enabled: r.enabled ?? true,
       overrides: r.overrides ?? {}
     })));
@@ -364,7 +363,7 @@ app.post("/sites", async (req, res) => {
     res.status(201).json(up.rows[0]);
   } catch (e) {
     try { await client.query("ROLLBACK"); } catch {}
-    res.status(e.status || 500).json({ error: e.message });
+    res.status(500).json({ error: e.message });
   } finally {
     client.release();
   }
@@ -495,7 +494,6 @@ app.get("/sites/:siteKey/pages/:slug", async (req, res) => {
     const tenantId = await setTenantContext(client, tenantName);
     const siteId = await getSiteIdByKey(client, tenantId, siteKey);
 
-    // page + template + tenant overrides
     const row = await client.query(
       `select p.slug, p.overrides as page_overrides, p.published,
               t.id as template_id, t.key as template_key,
