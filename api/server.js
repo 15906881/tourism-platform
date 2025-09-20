@@ -1,4 +1,4 @@
-// api/server.js (complete)
+// api/server.js (clean, no /test route)
 const express = require("express");
 const { Pool } = require("pg");
 
@@ -7,7 +7,7 @@ const dbUrl =
   process.env.DATABASE_URL ||
   "postgresql:///postgres";
 
-// For local SSM tunnel to RDS we disable hostname verification.
+// For local SSM tunnel to RDS we disable hostname verification (local dev only).
 const ssl = { rejectUnauthorized: false };
 
 const pool = new Pool({ connectionString: dbUrl, ssl });
@@ -295,11 +295,6 @@ app.delete("/tenant-templates", async (req, res) => {
   }
 });
 
-// ---------- Test route to verify parameterized routing ----------
-app.get("/test/:id", (req, res) => {
-  res.json({ message: "test route works", id: req.params.id });
-});
-
 // ---------- JSON 404 ----------
 app.use((req, res) => {
   res.status(404).json({ error: "not found", path: req.path });
@@ -309,6 +304,4 @@ app.use((req, res) => {
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`API on :${port}`);
-  console.log("cwd:", process.cwd());
-  console.log("file:", __filename);
 });
