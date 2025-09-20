@@ -2,16 +2,36 @@ const express = require("express");
 const { Pool } = require("pg");
 
 // Prefer APP_DB_URL (CI/containers). Fallbacks for local dev.
-// If the URL has sslmode=require or ssl=true, enable TLS in pg client.
 const dbUrl =
   process.env.APP_DB_URL ||
   process.env.DATABASE_URL ||
   "postgresql:///postgres";
 
+// Decide SSL behavior for node-postgres.
+// - Through the SSM tunnel we connect to 127.0.0.1 but the server cert
+//   is for *.rds.amazonaws.com -> hostname mismatch. We must disable
+//   certificate verification in that case.
+// - If the URL includes sslmode=require or ssl=true, we enable SSL.
+// - You can force this behavior with ALLOW_SELF_SIGNED=1.
 const mustSSL = /sslmode=require|ssl=true/i.test(dbUrl);
+let ssl;
+try {
+  const u = new URL(dbUrl);
+  const host = (u.hostname || "").toLowerCase();
+  const isLocal = host === "127.0.0.1" || host === "localhost";
+  if (isLocal || mustSSL || process.env.ALLOW_SELF_SIGNED === "1") {
+    ssl = { rejectUnauthorized: false };
+  }
+} catch {
+  // If URL parsing fails, fall back to honoring sslmode flag.
+  if (mustSSL || process.env.ALLOW_SELF_SIGNED === "1") {
+    ssl = { rejectUnauthorized: false };
+  }
+}
+
 const pool = new Pool({
   connectionString: dbUrl,
-  ssl: mustSSL ? { rejectUnauthorized: false } : undefined,
+  ssl, // may be undefined if not needed
 });
 
 const app = express();
