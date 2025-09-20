@@ -37,38 +37,51 @@ jobs:
           until pg_isready -h localhost -p 5432 -U postgres; do sleep 1; done
           psql -h localhost -U postgres -c 'select version();'
 
-      - name: Apply migrations in order
+      - name: Apply migrations (in order)
         env: { PGPASSWORD: postgres }
         run: |
           shopt -s nullglob
-          for f in database/migrations/*.sql; do
+          for f in $(ls -1 database/migrations/*.sql | sort); do
             echo ">> applying $f"
             psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f "$f"
           done
 
-      - name: RLS smoke test with non-superuser (tp_user)
-        env: { PGPASSWORD: tp_password }
+      # RLS smoke test with the non-superuser created in 0002 (tp_user/tp_password)
+      - name: RLS smoke test (memberships visibility is tenant-scoped)
+        env:
+          PGPASSWORD: tp_password
         run: |
-          # create two tenants
-          psql -h localhost -U tp_user -d postgres <<'SQL'
+          psql -v ON_ERROR_STOP=1 -h localhost -U tp_user -d postgres <<'SQL'
+          -- tenants
           insert into core.tenants(name) values ('t1'), ('t2')
           on conflict (name) do nothing;
 
-          -- set tenant to t1 and insert/select
+          -- accounts
+          insert into core.accounts(email) values ('u1@example.com'), ('u2@example.com')
+          on conflict (email) do nothing;
+
+          -- memberships (one per tenant)
+          insert into core.memberships(account_id, tenant_id, role)
+          select a.id, t.id, 'member'
+          from core.accounts a join core.tenants t
+            on a.email='u1@example.com' and t.name='t1'
+          on conflict do nothing;
+
+          insert into core.memberships(account_id, tenant_id, role)
+          select a.id, t.id, 'member'
+          from core.accounts a join core.tenants t
+            on a.email='u2@example.com' and t.name='t2'
+          on conflict do nothing;
+
+          -- tenant t1 sees only its membership
           select set_config('app.tenant_id', (select id::text from core.tenants where name='t1'), false);
-          insert into core.hello(tenant_id, msg)
-            values ((select id from core.tenants where name='t1'), 'hi from t1')
-          on conflict do nothing;
-          select count(*) = 1 as only_t1_visible from core.hello;
+          select count(*) = 1 as only_t1_visible from core.memberships;
 
-          -- switch to t2 and verify isolation
+          -- switch to t2 -> sees only t2 row
           select set_config('app.tenant_id', (select id::text from core.tenants where name='t2'), false);
-          insert into core.hello(tenant_id, msg)
-            values ((select id from core.tenants where name='t2'), 'hi from t2')
-          on conflict do nothing;
-          select count(*) = 1 as only_t2_visible from core.hello;
+          select count(*) = 1 as only_t2_visible from core.memberships;
 
-          -- unset tenant -> expect 0 visible rows due to RLS
+          -- unset tenant -> RLS denies all
           select set_config('app.tenant_id', null, false);
-          select count(*) = 0 as no_access_without_tenant from core.hello where true;
+          select count(*) = 0 as no_access_without_tenant from core.memberships where true;
           SQL
