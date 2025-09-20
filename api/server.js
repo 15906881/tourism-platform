@@ -9,8 +9,7 @@ const dbUrl =
   process.env.DATABASE_URL ||
   "postgresql:///postgres";
 
-// If sslmode=require is in the URL, pg will use TLS.
-// Honor NODE_TLS_REJECT_UNAUTHORIZED=0 for the local tunnel.
+// Respect sslmode=require in the URL and NODE_TLS_REJECT_UNAUTHORIZED
 const ssl =
   /sslmode=require/.test(dbUrl)
     ? { rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0" }
@@ -21,6 +20,10 @@ const app = express();
 app.use(express.json());
 
 // ---------- helpers ----------
+function pickTenant(req) {
+  return req.query.tenant || req.header("X-Tenant");
+}
+
 async function withTenant(tenantName, fn) {
   if (!tenantName) {
     const err = new Error("Missing tenant");
@@ -40,10 +43,10 @@ async function withTenant(tenantName, fn) {
     `,
       [tenantName]
     );
-    const { rows: chk } = await client.query(
+    const { rows } = await client.query(
       `SELECT current_setting('app.tenant_id', true) AS tid`
     );
-    if (!chk[0]?.tid) {
+    if (!rows[0]?.tid) {
       const err = new Error(`Unknown tenant: ${tenantName}`);
       err.status = 404;
       throw err;
@@ -57,9 +60,6 @@ async function withTenant(tenantName, fn) {
   } finally {
     client.release();
   }
-}
-function pickTenant(req) {
-  return req.query.tenant || req.header("X-Tenant");
 }
 
 // ---------- routes ----------
@@ -151,7 +151,7 @@ app.post("/users", async (req, res) => {
   }
 });
 
-// List all templates for tenant (with overrides)
+// All templates for tenant (with overrides)
 app.get("/templates", async (req, res) => {
   try {
     const tenantName = pickTenant(req);
@@ -176,7 +176,7 @@ app.get("/templates", async (req, res) => {
   }
 });
 
-// Single template (with shallow merged content)
+// Single template (with shallow-merged content)
 app.get("/templates/:key", async (req, res) => {
   try {
     const tenantName = pickTenant(req);
@@ -241,8 +241,8 @@ app.post("/tenant-templates", async (req, res) => {
     if (!template_key) return res.status(400).json({ error: "template_key is required" });
 
     const row = await withTenant(tenantName, async (client) => {
-      const tid = await client.query(`SELECT id FROM core.templates WHERE key = $1`, [template_key]);
-      if (!tid.rows[0]) {
+      const t = await client.query(`SELECT id FROM core.templates WHERE key = $1`, [template_key]);
+      if (!t.rows[0]) {
         const err = new Error(`template not found: ${template_key}`);
         err.status = 404;
         throw err;
@@ -263,7 +263,7 @@ app.post("/tenant-templates", async (req, res) => {
           updated_at = now()
         RETURNING tenant_id, template_id, $4::text AS template_key, enabled, overrides
       `,
-        [tid.rows[0].id, enabled, JSON.stringify(overrides), template_key]
+        [t.rows[0].id, enabled, JSON.stringify(overrides), template_key]
       );
       return rows[0];
     });
@@ -282,8 +282,8 @@ app.delete("/tenant-templates", async (req, res) => {
     if (!template_key) return res.status(400).json({ error: "template_key is required" });
 
     const ok = await withTenant(tenantName, async (client) => {
-      const tid = await client.query(`SELECT id FROM core.templates WHERE key = $1`, [template_key]);
-      if (!tid.rows[0]) {
+      const t = await client.query(`SELECT id FROM core.templates WHERE key = $1`, [template_key]);
+      if (!t.rows[0]) {
         const err = new Error(`template not found: ${template_key}`);
         err.status = 404;
         throw err;
@@ -294,7 +294,7 @@ app.delete("/tenant-templates", async (req, res) => {
         WHERE tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid
           AND template_id = $1
       `,
-        [tid.rows[0].id]
+        [t.rows[0].id]
       );
       return del.rowCount > 0;
     });
@@ -305,7 +305,7 @@ app.delete("/tenant-templates", async (req, res) => {
   }
 });
 
-// JSON 404 for unknown routes (prevents plain text)
+// JSON 404 (avoid HTML)
 app.use((req, res) => {
   res.status(404).json({ error: "not found", path: req.path });
 });
