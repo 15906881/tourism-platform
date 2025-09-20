@@ -1,4 +1,4 @@
-// api/server.js  (complete)
+// api/server.js (complete)
 const express = require("express");
 const { Pool } = require("pg");
 
@@ -128,7 +128,7 @@ app.post("/users", async (req, res) => {
   }
 });
 
-// ---------- Templates (read per-tenant) ----------
+// ---------- Templates (list merged for a tenant) ----------
 app.get("/templates", async (req, res) => {
   const tenantName = req.query.tenant || req.header("X-Tenant");
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
@@ -136,22 +136,19 @@ app.get("/templates", async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    await setTenantContext(client, tenantName);
+    const tenantId = await setTenantContext(client, tenantName);
 
     const { rows } = await client.query(
       `select
-          t.id,
-          t.key,
-          t.name,
-          t.category,
-          t.version,
-          t.content,
-          coalesce(tt.enabled, true) as enabled,
-          coalesce(tt.overrides, '{}'::jsonb) as overrides
-        from core.templates t
-        left join core.tenant_templates tt
-               on tt.template_id = t.id
-        order by t.key`
+         t.id, t.key, t.name, t.category, t.version,
+         (t.content || coalesce(tt.overrides,'{}'::jsonb)) as content,
+         coalesce(tt.enabled, true) as enabled,
+         coalesce(tt.overrides, '{}'::jsonb) as overrides
+       from core.templates t
+       left join core.tenant_templates tt
+              on tt.template_id = t.id and tt.tenant_id = $1
+       order by t.key`,
+      [tenantId]
     );
 
     await client.query("COMMIT");
@@ -164,41 +161,95 @@ app.get("/templates", async (req, res) => {
   }
 });
 
-// ---------- Templates (enable/override per tenant) ----------
-app.post("/tenant-templates", async (req, res) => {
-  const tenantName = req.query.tenant || req.header("X-Tenant") || req.body?.tenant;
-  const { template_key, enabled, overrides } = req.body || {};
+// ---------- Templates (single by key, merged) ----------
+app.get("/templates/:key", async (req, res) => {
+  const tenantName = req.query.tenant || req.header("X-Tenant");
+  const key = req.params.key;
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
-  if (!template_key || typeof template_key !== "string")
-    return res.status(400).json({ error: "template_key is required" });
 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-
     const tenantId = await setTenantContext(client, tenantName);
 
-    const tpl = await client.query(
-      "select id from core.templates where key=$1",
-      [template_key]
+    const q = await client.query(
+      `select
+         t.id, t.key, t.name, t.category, t.version,
+         (t.content || coalesce(tt.overrides,'{}'::jsonb)) as content,
+         coalesce(tt.enabled, true) as enabled,
+         coalesce(tt.overrides, '{}'::jsonb) as overrides
+       from core.templates t
+       left join core.tenant_templates tt
+              on tt.template_id = t.id and tt.tenant_id = $1
+       where t.key = $2`,
+      [tenantId, key]
     );
-    if (tpl.rowCount === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ error: `Template not found: ${template_key}` });
-    }
 
-    const tId = tpl.rows[0].id;
+    await client.query("COMMIT");
+    if (q.rowCount === 0) return res.status(404).json({ error: "template not found", key });
+    res.json(q.rows[0]);
+  } catch (e) {
+    try { await client.query("ROLLBACK"); } catch {}
+    res.status(e.status || 500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ---------- Tenant templates (list overrides for a tenant) ----------
+app.get("/tenant-templates", async (req, res) => {
+  const tenantName = req.query.tenant || req.header("X-Tenant");
+  if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const tenantId = await setTenantContext(client, tenantName);
+
+    const { rows } = await client.query(
+      `select tt.tenant_id, tt.template_id, tt.enabled, tt.overrides, t.key
+         from core.tenant_templates tt
+         join core.templates t on t.id = tt.template_id
+        where tt.tenant_id = $1
+        order by t.key`,
+      [tenantId]
+    );
+
+    await client.query("COMMIT");
+    res.json(rows);
+  } catch (e) {
+    try { await client.query("ROLLBACK"); } catch {}
+    res.status(e.status || 500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ---------- Tenant templates (upsert for a tenant) ----------
+app.post("/tenant-templates", async (req, res) => {
+  const tenantName = req.query.tenant || req.header("X-Tenant");
+  const { template_key, enabled = true, overrides = {} } = req.body || {};
+  if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
+  if (!template_key) return res.status(400).json({ error: "template_key is required" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const tenantId = await setTenantContext(client, tenantName);
+
+    const t = await client.query("select id from core.templates where key = $1", [template_key]);
+    if (t.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "template not found", template_key });
+    }
 
     const up = await client.query(
       `insert into core.tenant_templates(tenant_id, template_id, enabled, overrides)
-       values ($1, $2, coalesce($3,true), coalesce($4,'{}'::jsonb))
-       on conflict (tenant_id, template_id)
-       do update set
-         enabled   = coalesce(EXCLUDED.enabled, core.tenant_templates.enabled),
-         overrides = coalesce(EXCLUDED.overrides, core.tenant_templates.overrides),
-         updated_at = now()
+       values ($1,$2,$3,$4::jsonb)
+       on conflict(tenant_id, template_id)
+       do update set enabled = excluded.enabled, overrides = excluded.overrides
        returning tenant_id, template_id, enabled, overrides`,
-      [tenantId, tId, enabled, overrides]
+      [tenantId, t.rows[0].id, enabled, JSON.stringify(overrides)]
     );
 
     await client.query("COMMIT");
@@ -211,5 +262,53 @@ app.post("/tenant-templates", async (req, res) => {
   }
 });
 
+// ---------- Tenant templates (delete override) ----------
+app.delete("/tenant-templates", async (req, res) => {
+  const tenantName = req.query.tenant || req.header("X-Tenant");
+  const templateKey = req.query.template_key;
+  if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
+  if (!templateKey) return res.status(400).json({ error: "template_key is required" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const tenantId = await setTenantContext(client, tenantName);
+
+    const t = await client.query("select id from core.templates where key = $1", [templateKey]);
+    if (t.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "template not found", templateKey });
+    }
+
+    const del = await client.query(
+      "delete from core.tenant_templates where tenant_id=$1 and template_id=$2",
+      [tenantId, t.rows[0].id]
+    );
+
+    await client.query("COMMIT");
+    res.json({ ok: true, deleted: del.rowCount });
+  } catch (e) {
+    try { await client.query("ROLLBACK"); } catch {}
+    res.status(e.status || 500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ---------- Test route to verify parameterized routing ----------
+app.get("/test/:id", (req, res) => {
+  res.json({ message: "test route works", id: req.params.id });
+});
+
+// ---------- JSON 404 ----------
+app.use((req, res) => {
+  res.status(404).json({ error: "not found", path: req.path });
+});
+
+// ---------- Start ----------
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`API on :${port}`));
+app.listen(port, () => {
+  console.log(`API on :${port}`);
+  console.log("cwd:", process.cwd());
+  console.log("file:", __filename);
+});
