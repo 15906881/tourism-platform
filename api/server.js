@@ -8,6 +8,8 @@ const dbUrl =
   "postgresql:///postgres";
 
 // For local SSM tunnel to RDS we disable hostname verification.
+// IMPORTANT: turn this OFF in prod by removing rejectUnauthorized: false and
+// installing the RDS CA cert.
 const ssl = { rejectUnauthorized: false };
 
 const pool = new Pool({ connectionString: dbUrl, ssl });
@@ -128,7 +130,7 @@ app.post("/users", async (req, res) => {
   }
 });
 
-// ---------- Templates (read per-tenant) ----------
+// ---------- Templates (read per-tenant; merged with overrides) ----------
 app.get("/templates", async (req, res) => {
   const tenantName = req.query.tenant || req.header("X-Tenant");
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
@@ -164,7 +166,48 @@ app.get("/templates", async (req, res) => {
   }
 });
 
-// ---------- Templates (enable/override per tenant) ----------
+// ---------- Template by key (merged) ----------
+app.get("/templates/:key", async (req, res) => {
+  const tenantName = req.query.tenant || req.header("X-Tenant");
+  if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
+
+  const { key } = req.params;
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await setTenantContext(client, tenantName);
+
+    const q = await client.query(
+      `select
+          t.id,
+          t.key,
+          t.name,
+          t.category,
+          t.version,
+          t.content,
+          coalesce(tt.enabled, true) as enabled,
+          coalesce(tt.overrides, '{}'::jsonb) as overrides
+        from core.templates t
+        left join core.tenant_templates tt
+               on tt.template_id = t.id
+       where t.key = $1`,
+      [key]
+    );
+
+    await client.query("COMMIT");
+
+    if (q.rowCount === 0) return res.status(404).json({ error: `Template not found: ${key}` });
+    res.json(q.rows[0]);
+  } catch (e) {
+    try { await client.query("ROLLBACK"); } catch {}
+    res.status(e.status || 500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ---------- Tenant overrides: upsert ----------
 app.post("/tenant-templates", async (req, res) => {
   const tenantName = req.query.tenant || req.header("X-Tenant") || req.body?.tenant;
   const { template_key, enabled, overrides } = req.body || {};
@@ -176,12 +219,9 @@ app.post("/tenant-templates", async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    const tenantId = await setTenantContext(client, tenantName);
+    await setTenantContext(client, tenantName);
 
-    const tpl = await client.query(
-      "select id from core.templates where key=$1",
-      [template_key]
-    );
+    const tpl = await client.query("select id from core.templates where key=$1", [template_key]);
     if (tpl.rowCount === 0) {
       await client.query("ROLLBACK");
       return res.status(404).json({ error: `Template not found: ${template_key}` });
@@ -191,18 +231,88 @@ app.post("/tenant-templates", async (req, res) => {
 
     const up = await client.query(
       `insert into core.tenant_templates(tenant_id, template_id, enabled, overrides)
-       values ($1, $2, coalesce($3,true), coalesce($4,'{}'::jsonb))
+       values (NULLIF(current_setting('app.tenant_id', true), '')::uuid, $1, coalesce($2,true), coalesce($3,'{}'::jsonb))
        on conflict (tenant_id, template_id)
        do update set
          enabled   = coalesce(EXCLUDED.enabled, core.tenant_templates.enabled),
          overrides = coalesce(EXCLUDED.overrides, core.tenant_templates.overrides),
          updated_at = now()
        returning tenant_id, template_id, enabled, overrides`,
-      [tenantId, tId, enabled, overrides]
+      [tId, enabled, overrides]
     );
 
     await client.query("COMMIT");
     res.status(201).json(up.rows[0]);
+  } catch (e) {
+    try { await client.query("ROLLBACK"); } catch {}
+    res.status(e.status || 500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ---------- Tenant overrides: list for tenant ----------
+app.get("/tenant-templates", async (req, res) => {
+  const tenantName = req.query.tenant || req.header("X-Tenant");
+  if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await setTenantContext(client, tenantName);
+
+    const { rows } = await client.query(
+      `select
+          tt.template_id,
+          t.key,
+          t.name,
+          tt.enabled,
+          tt.overrides,
+          tt.created_at,
+          tt.updated_at
+         from core.tenant_templates tt
+         join core.templates t on t.id = tt.template_id
+        order by t.key`
+    );
+    await client.query("COMMIT");
+    res.json(rows);
+  } catch (e) {
+    try { await client.query("ROLLBACK"); } catch {}
+    res.status(e.status || 500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ---------- Tenant overrides: delete one ----------
+app.delete("/tenant-templates", async (req, res) => {
+  const tenantName = req.query.tenant || req.header("X-Tenant");
+  const { template_key } = req.query;
+  if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
+  if (!template_key) return res.status(400).json({ error: "Missing template_key query param" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await setTenantContext(client, tenantName);
+
+    const tpl = await client.query("select id from core.templates where key=$1", [template_key]);
+    if (tpl.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: `Template not found: ${template_key}` });
+    }
+
+    // RLS enforces current tenant on delete.
+    const del = await client.query(
+      `delete from core.tenant_templates
+        where template_id = $1
+        returning tenant_id, template_id`,
+      [tpl.rows[0].id]
+    );
+
+    await client.query("COMMIT");
+    if (del.rowCount === 0) return res.status(404).json({ error: "No override to delete" });
+    res.json({ ok: true });
   } catch (e) {
     try { await client.query("ROLLBACK"); } catch {}
     res.status(e.status || 500).json({ error: e.message });
