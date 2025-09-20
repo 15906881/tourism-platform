@@ -47,7 +47,8 @@ async function setTenantContext(client, tenantName) {
   return tenantId;
 }
 
-// ---------- Users (read via compatibility view) ----------
+// ---------- Users (read) ----------
+// IMPORTANT: Query base tables so RLS applies (DO NOT use a superuser-owned view here).
 app.get("/users", async (req, res) => {
   const tenantName = req.query.tenant || req.header("X-Tenant");
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
@@ -56,9 +57,15 @@ app.get("/users", async (req, res) => {
   try {
     await client.query("BEGIN");
     await setTenantContext(client, tenantName);
+
+    // RLS is enforced on core.memberships; this will only return the current-tenant rows
     const { rows } = await client.query(
-      "select account_id as id, email, role from core.users_v order by email"
+      `select m.account_id as id, a.email, m.role
+         from core.memberships m
+         join core.accounts a on a.id = m.account_id
+        order by a.email`
     );
+
     await client.query("COMMIT");
     res.json(rows);
   } catch (e) {
