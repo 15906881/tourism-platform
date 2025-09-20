@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+TF_DIR=~/tourism-platform/infra/aws/terraform
+REGION=us-east-1
+INSTANCE_ID=$(terraform -chdir="$TF_DIR" output -raw bastion_instance_id)
+DB_HOST=$(terraform -chdir="$TF_DIR" output -raw db_instance_endpoint | cut -d: -f1)
+echo "Opening local 6543 -> ${DB_HOST}:5432 via bastion ${INSTANCE_ID} ..."
+aws ssm start-session --region "$REGION" --target "$INSTANCE_ID" \
+  --document-name AWS-StartPortForwardingSessionToRemoteHost \
+  --parameters "host=$DB_HOST,portNumber=5432,localPortNumber=6543"
