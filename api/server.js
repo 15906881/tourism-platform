@@ -1,9 +1,11 @@
+cd ~/tourism-platform
+cat > api/server.js <<'JS'
 // api/server.js (complete)
 
 const express = require("express");
 const { Pool } = require("pg");
 
-// Connection (root package.json pins express/pg; TLS off for SSM localhost)
+// Connection (TLS off for SSM localhost)
 const dbUrl = process.env.APP_DB_URL || process.env.DATABASE_URL || "postgresql:///postgres";
 const ssl = { rejectUnauthorized: false };
 const pool = new Pool({ connectionString: dbUrl, ssl });
@@ -43,7 +45,7 @@ function shallowMerge(a, b) {
   if (!a && !b) return {};
   if (!a) return b;
   if (!b) return a;
-  return { ...a, ...b }; // top-level merge
+  return { ...a, ...b };
 }
 
 // ---------- Users (read) ----------
@@ -301,10 +303,10 @@ app.put("/tenant-templates", async (req, res) => {
   }
 });
 
-// ---------- Tenant templates: delete override ----------
+// ---------- Tenant templates: delete ----------
 app.delete("/tenant-templates", async (req, res) => {
-  const tenantName = req.query.tenant || req.header("X-Tenant");
-  const templateKey = req.query.template_key;
+  const tenantName = req.query.tenant || req.header("X-Tenant") || req.body?.tenant;
+  const templateKey = req.query.template_key || req.body?.template_key;
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
   if (!templateKey) return res.status(400).json({ error: "template_key is required" });
 
@@ -335,14 +337,12 @@ app.delete("/tenant-templates", async (req, res) => {
   }
 });
 
-// ---------- Sites ----------
+// ---------- Sites: create ----------
 app.post("/sites", async (req, res) => {
   const tenantName = req.query.tenant || req.header("X-Tenant") || req.body?.tenant;
-  const { key, name, domain } = req.body || {};
+  const { key, name, domain = null } = req.body || {};
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
-  if (!name || typeof name !== "string") return res.status(400).json({ error: "name is required" });
-
-  const siteKey = key && typeof key === "string" ? key : "main";
+  if (!key || !name) return res.status(400).json({ error: "key and name are required" });
 
   const client = await pool.connect();
   try {
@@ -351,41 +351,15 @@ app.post("/sites", async (req, res) => {
 
     const up = await client.query(
       `insert into core.sites(tenant_id, key, name, domain)
-       values ($1,$2,$3,$4)
+       values ($1, $2, $3, $4)
        on conflict (tenant_id, key) do update
-         set name = excluded.name,
-             domain = excluded.domain
+         set name = excluded.name, domain = excluded.domain
        returning id, tenant_id, key, name, domain, created_at`,
-      [tenantId, siteKey, name, domain || null]
+      [tenantId, key, name, domain]
     );
 
     await client.query("COMMIT");
     res.status(201).json(up.rows[0]);
-  } catch (e) {
-    try { await client.query("ROLLBACK"); } catch {}
-    res.status(500).json({ error: e.message });
-  } finally {
-    client.release();
-  }
-});
-
-app.get("/sites", async (req, res) => {
-  const tenantName = req.query.tenant || req.header("X-Tenant");
-  if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
-
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    await setTenantContext(client, tenantName);
-
-    const list = await client.query(
-      `select id, key, name, domain, created_at
-         from core.sites
-        order by created_at asc`
-    );
-
-    await client.query("COMMIT");
-    res.json(list.rows);
   } catch (e) {
     try { await client.query("ROLLBACK"); } catch {}
     res.status(e.status || 500).json({ error: e.message });
@@ -394,41 +368,56 @@ app.get("/sites", async (req, res) => {
   }
 });
 
-// ---------- Pages ----------
-async function getSiteIdByKey(client, tenantId, siteKey) {
-  const s = await client.query(
-    `select id from core.sites where tenant_id = $1 and key = $2`,
-    [tenantId, siteKey]
-  );
-  if (s.rowCount === 0) {
-    const err = new Error(`Site not found: ${siteKey}`);
-    err.status = 404;
-    throw err;
-  }
-  return s.rows[0].id;
-}
-
-app.post("/sites/:siteKey/pages", async (req, res) => {
-  const tenantName = req.query.tenant || req.header("X-Tenant") || req.body?.tenant;
-  const { siteKey } = req.params;
-  const { slug, template_key, overrides = {}, published = false } = req.body || {};
-
+// ---------- Sites: list ----------
+app.get("/sites", async (req, res) => {
+  const tenantName = req.query.tenant || req.header("X-Tenant");
   if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
-  if (!slug) return res.status(400).json({ error: "slug is required" });
-  if (!template_key) return res.status(400).json({ error: "template_key is required" });
 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
     const tenantId = await setTenantContext(client, tenantName);
 
-    const siteId = await getSiteIdByKey(client, tenantId, siteKey);
+    const rows = await client.query(
+      `select key, name, domain, created_at from core.sites
+        where tenant_id = $1
+        order by key`,
+      [tenantId]
+    );
+
+    await client.query("COMMIT");
+    res.json(rows.rows);
+  } catch (e) {
+    try { await client.query("ROLLBACK"); } catch {}
+    res.status(e.status || 500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ---------- Pages: create for site ----------
+app.post("/sites/:siteKey/pages", async (req, res) => {
+  const tenantName = req.query.tenant || req.header("X-Tenant") || req.body?.tenant;
+  const { siteKey } = req.params;
+  const { slug, template_key, overrides = {}, published = false } = req.body || {};
+  if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
+  if (!slug || !template_key) return res.status(400).json({ error: "slug and template_key are required" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const tenantId = await setTenantContext(client, tenantName);
+
+    const s = await client.query(`select id from core.sites where tenant_id = $1 and key = $2`, [tenantId, siteKey]);
+    if (s.rowCount === 0) {
+      const err = new Error(`Site not found: ${siteKey}`);
+      err.status = 404; throw err;
+    }
 
     const t = await client.query(`select id from core.templates where key = $1`, [template_key]);
     if (t.rowCount === 0) {
       const err = new Error(`Template not found: ${template_key}`);
-      err.status = 404;
-      throw err;
+      err.status = 404; throw err;
     }
 
     const up = await client.query(
@@ -439,8 +428,8 @@ app.post("/sites/:siteKey/pages", async (req, res) => {
              overrides   = excluded.overrides,
              published   = excluded.published,
              updated_at  = now()
-       returning id, slug, published, updated_at`,
-      [siteId, t.rows[0].id, slug, overrides, !!published]
+       returning id, slug, published, created_at, updated_at`,
+      [s.rows[0].id, t.rows[0].id, slug, overrides, !!published]
     );
 
     await client.query("COMMIT");
@@ -453,6 +442,7 @@ app.post("/sites/:siteKey/pages", async (req, res) => {
   }
 });
 
+// ---------- Pages: list for site ----------
 app.get("/sites/:siteKey/pages", async (req, res) => {
   const tenantName = req.query.tenant || req.header("X-Tenant");
   const { siteKey } = req.params;
@@ -462,19 +452,24 @@ app.get("/sites/:siteKey/pages", async (req, res) => {
   try {
     await client.query("BEGIN");
     const tenantId = await setTenantContext(client, tenantName);
-    const siteId = await getSiteIdByKey(client, tenantId, siteKey);
 
-    const list = await client.query(
-      `select p.slug, t.key as template_key, p.published, p.updated_at
+    const s = await client.query(`select id from core.sites where tenant_id = $1 and key = $2`, [tenantId, siteKey]);
+    if (s.rowCount === 0) {
+      const err = new Error(`Site not found: ${siteKey}`);
+      err.status = 404; throw err;
+    }
+
+    const rows = await client.query(
+      `select p.slug, p.published, p.created_at, p.updated_at, t.key as template_key
          from core.pages p
          join core.templates t on t.id = p.template_id
         where p.site_id = $1
         order by p.slug`,
-      [siteId]
+      [s.rows[0].id]
     );
 
     await client.query("COMMIT");
-    res.json(list.rows);
+    res.json(rows.rows);
   } catch (e) {
     try { await client.query("ROLLBACK"); } catch {}
     res.status(e.status || 500).json({ error: e.message });
@@ -483,6 +478,7 @@ app.get("/sites/:siteKey/pages", async (req, res) => {
   }
 });
 
+// ---------- Pages: get merged content ----------
 app.get("/sites/:siteKey/pages/:slug", async (req, res) => {
   const tenantName = req.query.tenant || req.header("X-Tenant");
   const { siteKey, slug } = req.params;
@@ -492,38 +488,44 @@ app.get("/sites/:siteKey/pages/:slug", async (req, res) => {
   try {
     await client.query("BEGIN");
     const tenantId = await setTenantContext(client, tenantName);
-    const siteId = await getSiteIdByKey(client, tenantId, siteKey);
 
-    const row = await client.query(
-      `select p.slug, p.overrides as page_overrides, p.published,
-              t.id as template_id, t.key as template_key,
-              t.name, t.category, t.version, t.content as base_content,
-              tt.overrides as tenant_overrides
+    const s = await client.query(`select id from core.sites where tenant_id = $1 and key = $2`, [tenantId, siteKey]);
+    if (s.rowCount === 0) {
+      const err = new Error(`Site not found: ${siteKey}`);
+      err.status = 404; throw err;
+    }
+    const siteId = s.rows[0].id;
+
+    const p = await client.query(
+      `select p.id, p.slug, p.overrides as page_overrides, p.published,
+              t.id as template_id, t.key as template_key, t.content as base_content
          from core.pages p
          join core.templates t on t.id = p.template_id
-         left join core.tenant_templates tt
-           on tt.template_id = t.id and tt.tenant_id = $1
-        where p.site_id = $2 and p.slug = $3`,
-      [tenantId, siteId, slug]
+        where p.site_id = $1 and p.slug = $2`,
+      [siteId, slug]
     );
-
-    if (row.rowCount === 0) {
+    if (p.rowCount === 0) {
       const err = new Error(`Page not found: ${slug}`);
-      err.status = 404;
-      throw err;
+      err.status = 404; throw err;
     }
-    const r = row.rows[0];
+    const row = p.rows[0];
 
-    const merged = shallowMerge(
-      shallowMerge(r.base_content, r.tenant_overrides || {}),
-      r.page_overrides || {}
+    const tt = await client.query(
+      `select overrides
+         from core.tenant_templates
+        where tenant_id = $1 and template_id = $2`,
+      [tenantId, row.template_id]
     );
+    const tenantOverrides = tt.rowCount ? (tt.rows[0].overrides || {}) : {};
+
+    const merged = shallowMerge(shallowMerge(row.base_content, tenantOverrides), row.page_overrides);
 
     await client.query("COMMIT");
     res.json({
-      slug: r.slug,
-      template_key: r.template_key,
-      published: r.published,
+      site_key: siteKey,
+      slug: row.slug,
+      template_key: row.template_key,
+      published: row.published,
       content: merged
     });
   } catch (e) {
@@ -541,3 +543,4 @@ app.use((req, res) => {
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`API on :${port}`));
+JS
