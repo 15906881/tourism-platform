@@ -1,4 +1,4 @@
-// api/server.js  — COMPLETE FILE
+// api/server.js  — COMPLETE FILE (includes /test/:id)
 
 const express = require("express");
 const { Pool } = require("pg");
@@ -235,30 +235,9 @@ app.get("/tenant-templates", async (req, res) => {
   }
 });
 
-// Delete a tenant override by template key
-app.delete("/tenant-templates", async (req, res) => {
-  const tenantName = getTenantName(req);
-  if (!tenantName) return res.status(400).json({ error: "Missing tenant" });
-
-  const { template_key } = req.query;
-  if (!template_key) return res.status(400).json({ error: "template_key is required" });
-
-  try {
-    const out = await withTenant(tenantName, async (client) => {
-      const q = `
-        DELETE FROM core.tenant_templates tt
-        USING core.templates t
-        WHERE t.key = $1 AND t.id = tt.template_id
-        RETURNING t.key AS template_key
-      `;
-      const { rows } = await client.query(q, [template_key]);
-      return rows[0];
-    });
-    if (!out) return res.status(404).json({ error: "override not found" });
-    res.json({ deleted: out.template_key });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+// --- test route (helps confirm parameter routes are working) --------------
+app.get("/test/:id", (req, res) => {
+  res.json({ message: "test route works", id: req.params.id });
 });
 
 // JSON 404 (avoid HTML error pages that break jq)
