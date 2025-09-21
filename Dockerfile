@@ -13,8 +13,9 @@ ENV NODE_ENV=production
 # Install ca-certificates and wget for downloading AWS RDS certificate bundle
 RUN apk add --no-cache ca-certificates wget
 
-# Download AWS RDS Global Certificate Bundle
-RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -O /usr/local/share/ca-certificates/rds-ca-bundle.pem
+# Create directory and download AWS RDS Global Certificate Bundle
+RUN mkdir -p /app/certs && \
+    wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -O /app/certs/rds-ca-bundle.pem
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY api ./api
