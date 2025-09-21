@@ -14,3 +14,4 @@ COPY database ./database
 COPY scripts ./scripts
 EXPOSE 3000
 CMD ["node", "api/server.js"]
+
