@@ -4,7 +4,6 @@ FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
-
 # Runtime
 FROM node:22-alpine
 WORKDIR /app
