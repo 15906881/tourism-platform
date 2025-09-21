@@ -1,14 +1,11 @@
-name: db: verify migrations
-
+name: "db: verify migrations"
 on:
   pull_request:
-    branches: [ develop, main ]
+    branches: [develop, main]
   workflow_dispatch: {}
-
 jobs:
   verify:
     runs-on: ubuntu-latest
-
     services:
       postgres:
         image: postgres:15
@@ -21,32 +18,28 @@ jobs:
           --health-interval=5s
           --health-timeout=5s
           --health-retries=20
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Install psql client
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
-
       - name: Wait for Postgres
-        env: { PGPASSWORD: postgres }
+        env:
+          PGPASSWORD: postgres
         run: |
           until pg_isready -h localhost -p 5432 -U postgres; do sleep 1; done
           psql -h localhost -U postgres -c 'select version();'
-
       - name: Apply migrations (in order)
-        env: { PGPASSWORD: postgres }
+        env:
+          PGPASSWORD: postgres
         run: |
           shopt -s nullglob
           for f in $(ls -1 database/migrations/*.sql | sort); do
             echo ">> applying $f"
             psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -f "$f"
           done
-
-      # RLS smoke test with the non-superuser created in 0002 (tp_user/tp_password)
       - name: RLS smoke test (memberships visibility is tenant-scoped)
         env:
           PGPASSWORD: tp_password
@@ -55,32 +48,26 @@ jobs:
           -- tenants
           insert into core.tenants(name) values ('t1'), ('t2')
           on conflict (name) do nothing;
-
           -- accounts
           insert into core.accounts(email) values ('u1@example.com'), ('u2@example.com')
           on conflict (email) do nothing;
-
           -- memberships (one per tenant)
           insert into core.memberships(account_id, tenant_id, role)
           select a.id, t.id, 'member'
           from core.accounts a join core.tenants t
             on a.email='u1@example.com' and t.name='t1'
           on conflict do nothing;
-
           insert into core.memberships(account_id, tenant_id, role)
           select a.id, t.id, 'member'
           from core.accounts a join core.tenants t
             on a.email='u2@example.com' and t.name='t2'
           on conflict do nothing;
-
           -- tenant t1 sees only its membership
           select set_config('app.tenant_id', (select id::text from core.tenants where name='t1'), false);
           select count(*) = 1 as only_t1_visible from core.memberships;
-
           -- switch to t2 -> sees only t2 row
           select set_config('app.tenant_id', (select id::text from core.tenants where name='t2'), false);
           select count(*) = 1 as only_t2_visible from core.memberships;
-
           -- unset tenant -> RLS denies all
           select set_config('app.tenant_id', null, false);
           select count(*) = 0 as no_access_without_tenant from core.memberships where true;
