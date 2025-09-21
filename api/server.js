@@ -3,13 +3,14 @@
 const express = require("express");
 const { Pool } = require("pg");
 
-// DB connection (TLS off for SSM localhost tunnel)
+// DB connection - let connection string handle SSL configuration
 const dbUrl =
   process.env.APP_DB_URL ||
   process.env.DATABASE_URL ||
   "postgresql:///postgres";
-const ssl = { rejectUnauthorized: false };
-const pool = new Pool({ connectionString: dbUrl, ssl });
+
+// Use connection string SSL parameters instead of hardcoded SSL config
+const pool = new Pool({ connectionString: dbUrl });
 
 const app = express();
 app.use(express.json());
