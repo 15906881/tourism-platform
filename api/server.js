@@ -10,11 +10,11 @@ const dbUrl =
   "postgresql:///postgres";
 
 // Use connection string SSL parameters with proper SSL handling
+// Replace lines 14-17 with this:
 const pool = new Pool({ 
   connectionString: dbUrl,
   ssl: { rejectUnauthorized: false }
 });
-
 const app = express();
 app.use(express.json());
 
