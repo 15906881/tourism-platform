@@ -12,11 +12,8 @@ const dbUrl =
 // Use connection string SSL parameters with proper SSL handling
 const pool = new Pool({ 
   connectionString: dbUrl,
-<<<<<<< HEAD
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-=======
   ssl: { rejectUnauthorized: false }
->>>>>>> 5ee7a0d8984a3d74cf9ab8df512bafa380fb07c8
 });
 
 const app = express();
