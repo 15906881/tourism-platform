@@ -9,11 +9,15 @@ const dbUrl =
   process.env.DATABASE_URL ||
   "postgresql:///postgres";
 
-// Use connection string SSL parameters with proper SSL handling
+// Proper SSL configuration for AWS RDS
 const pool = new Pool({ 
   connectionString: dbUrl,
-  ssl: { rejectUnauthorized: false }
+  ssl: process.env.NODE_ENV === 'production' ? {
+    rejectUnauthorized: false,
+    ca: require('fs').readFileSync('/etc/ssl/certs/rds-global-bundle.pem').toString()
+  } : false
 });
+
 const app = express();
 app.use(express.json());
 
