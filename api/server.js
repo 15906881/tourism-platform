@@ -12,7 +12,7 @@ const dbUrl =
 // Use connection string SSL parameters with proper SSL handling
 const pool = new Pool({ 
   connectionString: dbUrl,
-  ssl: ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false }
 });
 
 const app = express();
