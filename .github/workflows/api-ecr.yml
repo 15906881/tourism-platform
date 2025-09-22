@@ -1,4 +1,4 @@
-name: API → ECR
+name: API → ECR → ECS
 on:
   push:
     branches: [develop]
@@ -18,40 +18,35 @@ concurrency:
 env:
   AWS_REGION: us-east-1
   ECR_REPO: tourism-api
+  ECS_CLUSTER: tourism-platform-dev
+  ECS_SERVICE: tourism-api
 jobs:
-  build-push:
+  build-push-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+      
       - name: Ensure ECR repository exists
         run: |
           aws ecr describe-repositories --repository-names "$ECR_REPO" --region "$AWS_REGION" >/dev/null 2>&1 || \
           aws ecr create-repository --repository-name "$ECR_REPO" \
             --image-scanning-configuration scanOnPush=true \
             --region "$AWS_REGION"
+      
       - name: Login to Amazon ECR
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Debug - List files and show Dockerfile
-        run: |
-          echo "=== Current directory ==="
-          pwd
-          echo "=== List all files ==="
-          ls -la
-          echo "=== Check Dockerfile specifically ==="
-          ls -la Dockerfile || echo "Dockerfile not found"
-          echo "=== Dockerfile contents ==="
-          cat Dockerfile || echo "Cannot read Dockerfile"
-          echo "=== File type ==="
-          file Dockerfile || echo "Cannot check file type"
+      
       - name: Build & push
         uses: docker/build-push-action@v6
         with:
@@ -63,3 +58,28 @@ jobs:
             ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPO }}:develop-${{ github.sha }}
           build-args: |
             NODE_ENV=production
+      
+      - name: Update ECS service
+        run: |
+          echo "Triggering ECS deployment for $ECS_SERVICE in $ECS_CLUSTER"
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --force-new-deployment \
+            --region "$AWS_REGION"
+          
+          echo "Waiting for deployment to complete..."
+          aws ecs wait services-stable \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
+            --region "$AWS_REGION"
+          
+          echo "Deployment completed successfully!"
+      
+      - name: Get service status
+        run: |
+          aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
+            --region "$AWS_REGION" \
+            --query 'services[0].{status:status,runningCount:runningCount,pendingCount:pendingCount,taskDefinition:taskDefinition}'
