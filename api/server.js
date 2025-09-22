@@ -9,8 +9,11 @@ const dbUrl =
   process.env.DATABASE_URL ||
   "postgresql:///postgres";
 
-// Use connection string SSL parameters instead of hardcoded SSL config
-const pool = new Pool({ connectionString: dbUrl });
+// Use connection string SSL parameters with proper SSL handling
+const pool = new Pool({ 
+  connectionString: dbUrl,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
 const app = express();
 app.use(express.json());
