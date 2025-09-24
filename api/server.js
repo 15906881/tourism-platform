@@ -18,7 +18,7 @@ app.get('/', (req, res) => {
   res.json({ name: 'tourism-platform-api', version: '0.1.0' });
 });
 
-const PORT = process.env.PORT || 8000;
+const PORT = Number(process.env.PORT || 8000);
 app.listen(PORT, () => {
   console.log(`API listening on http://localhost:${PORT}`);
 });
