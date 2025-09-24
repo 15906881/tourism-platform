@@ -175,7 +175,7 @@ resource "aws_security_group" "ecs_tasks" {
   name_prefix = "${local.project_name}-${local.env}-ecs-tasks-"
   vpc_id      = aws_vpc.main.id
   description = "Security group for ECS tasks"
-  
+
   ingress {
     from_port   = 3000
     to_port     = 3000
@@ -183,7 +183,7 @@ resource "aws_security_group" "ecs_tasks" {
     cidr_blocks = [var.vpc_cidr]
     description = "API port"
   }
-  
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -191,7 +191,7 @@ resource "aws_security_group" "ecs_tasks" {
     cidr_blocks = ["0.0.0.0/0"]
     description = "All outbound traffic"
   }
-  
+
   tags = merge(local.common_tags, { Name = "${local.project_name}-${local.env}-ecs-tasks-sg" })
 }
 
@@ -273,25 +273,25 @@ resource "aws_cloudwatch_log_group" "ecs_tourism_api" {
 # ECS Task Definition
 resource "aws_ecs_task_definition" "tourism_api" {
   family                   = "tourism-api"
-  network_mode            = "awsvpc"
+  network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                     = "256"
-  memory                  = "512"
-  execution_role_arn      = aws_iam_role.ecs_execution_role.arn
-  
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
+
   container_definitions = jsonencode([
     {
-      name  = "api"
-      image = "${aws_ecr_repository.tourism_api.repository_url}:develop"
+      name      = "api"
+      image     = "${aws_ecr_repository.tourism_api.repository_url}:develop"
       essential = true
-      
+
       portMappings = [
         {
           containerPort = 3000
           protocol      = "tcp"
         }
       ]
-      
+
       environment = [
         {
           name  = "NODE_OPTIONS"
@@ -302,14 +302,14 @@ resource "aws_ecs_task_definition" "tourism_api" {
           value = "production"
         }
       ]
-      
+
       secrets = [
         {
           name      = "APP_DB_URL"
           valueFrom = "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:tourism-platform/dev/app-db-url-I97Qvt"
         }
       ]
-      
+
       healthCheck = {
         command = [
           "CMD-SHELL",
@@ -320,7 +320,7 @@ resource "aws_ecs_task_definition" "tourism_api" {
         retries     = 3
         startPeriod = 45
       }
-      
+
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -331,7 +331,7 @@ resource "aws_ecs_task_definition" "tourism_api" {
       }
     }
   ])
-  
+
   tags = merge(local.common_tags, { Name = "${local.project_name}-${local.env}-task-definition" })
 }
 
@@ -342,18 +342,18 @@ resource "aws_ecs_service" "tourism_api" {
   task_definition = aws_ecs_task_definition.tourism_api.arn
   desired_count   = 1
   launch_type     = "FARGATE"
-  
+
   network_configuration {
-    subnets         = [for s in aws_subnet.public : s.id]
-    security_groups = [aws_security_group.ecs_tasks.id]
+    subnets          = [for s in aws_subnet.public : s.id]
+    security_groups  = [aws_security_group.ecs_tasks.id]
     assign_public_ip = true
   }
-  
+
   deployment_configuration {
     maximum_percent         = 200
     minimum_healthy_percent = 100
   }
-  
+
   tags = merge(local.common_tags, { Name = "${local.project_name}-${local.env}-service" })
 }
 
