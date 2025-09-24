@@ -11,7 +11,7 @@
     "db:init": "./scripts/db_init.sh",
     "api:dev": "node api/server.js",
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run lint:all && npm --prefix web run build",
     "preview": "vite preview --port 5173",
     "lint:api": "npm --prefix api run lint",
     "lint:web": "npm --prefix web run lint",
@@ -37,5 +37,8 @@
     "pg": "^8.11.5",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
