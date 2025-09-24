@@ -21,8 +21,17 @@ const pool = new Pool({
 const app = express();
 app.use(express.json());
 
-// ---------- Health ----------
-app.get("/health", async (_req, res) => {
+// ---------- Health (Simple) ----------
+app.get("/health", (_req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// ---------- Health with DB check (separate endpoint) ----------
+app.get("/health/db", async (_req, res) => {
   try {
     const { rows } = await pool.query("select version() as v");
     res.json({ ok: true, db: rows[0].v });
