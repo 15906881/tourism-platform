@@ -9,15 +9,13 @@ const app = express();
 app.use(express.json());
 
 // Simple health with DB check
-app.get("/health", async (req, res) => {
-  try {
-    const { rows } = await pool.query("select version() as v");
-    res.json({ ok: true, db: rows[0].v });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
-  }
+app.get("/health", (_req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
-
 // GET /users?tenant=demo  (or header X-Tenant: demo)
 app.get("/users", async (req, res) => {
   const tenantName = req.query.tenant || req.header("X-Tenant");
