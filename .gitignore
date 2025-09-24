@@ -1,10 +1,17 @@
+# Node
 node_modules/
+dist/
+.build/
+.cache/
+.vite/
+coverage/
+*.log
 
-# Workflow backup files
-.github/workflows/*.backup
-.github/workflows/*.save
+# Env
+.env
+api/.env
+web/.env
 
-# Workflow backup files
-.github/workflows/*.backup
-.github/workflows/*.save
-api/*.backup
+# OS/Editor
+.DS_Store
+.vscode/
