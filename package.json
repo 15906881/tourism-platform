@@ -3,24 +3,33 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "lint": "eslint . --ext .js,.ts --fix",
+    "lint": "eslint .",
     "lint:check": "eslint . --ext .js,.ts",
     "format:check": "prettier --check \"**/*.{js,ts,json,yml,yaml}\"",
-    "format": "prettier --write \"**/*.{js,ts,json,yml,yaml}\"",
+    "format": "prettier . --write",
     "db:migrate": "bash scripts/migrate.sh",
     "db:init": "./scripts/db_init.sh",
     "api:dev": "node api/server.js",
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview --port 5173"
+    "build": "npm run lint:all && npm --prefix web run build",
+    "preview": "vite preview --port 5173",
+    "lint:api": "npm --prefix api run lint",
+    "lint:web": "npm --prefix web run lint",
+    "lint:all": "npm run lint:api && npm run lint:web",
+    "format:api": "npm --prefix api run format",
+    "format:web": "npm --prefix web run format",
+    "format:all": "npm run format:api && npm run format:web"
   },
   "devDependencies": {
-    "@eslint/js": "^9.35.0",
+    "@eslint/js": "^9.36.0",
     "@vitejs/plugin-react": "^5.0.3",
-    "eslint": "^9.10.0",
+    "eslint": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^15.0.0",
     "markdownlint-cli": "^0.41.0",
-    "prettier": "^3.3.3",
+    "prettier": "^3.6.2",
     "vite": "^7.1.7"
   },
   "dependencies": {
@@ -28,5 +37,8 @@
     "pg": "^8.11.5",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
