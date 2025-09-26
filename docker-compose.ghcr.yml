@@ -1,0 +1,11 @@
+services:
+  api:
+    image: ghcr.io/cran2025/tourism-platform-api:sha-b255b3e
+    ports: ["8000:8000"]
+    restart: unless-stopped
+
+  web:
+    image: ghcr.io/cran2025/tourism-platform-web:sha-b255b3e
+    ports: ["8080:80"]
+    depends_on: [api]
+    restart: unless-stopped
