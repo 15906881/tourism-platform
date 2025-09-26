@@ -1,35 +1,26 @@
 # Quickstart
 
-## Local dev
+This repo can run in two modes: **local dev** (hot reload) and **Docker compose** (prod-like).
 
-### API
+## Prereqs
+- Node 20 (see `.nvmrc`)
+- Docker Desktop
+- Git
+
+---
+
+## Local dev (hot reload)
+
+### 1) API
 ```bash
 cd api
 npm install
 echo -e "PORT=8000\nNODE_ENV=development" > .env
-npm run dev   # nodemon; http://localhost:8000/health
-
-[200~# 1. First, abort the stuck heredoc
-# Press Ctrl+C in your terminal to exit the heredoc
-
-# 2. Then run this complete block:
-cd ~/tourism-platform
-git checkout docs/quickstart
-
-cat > docs/QUICKSTART.md <<'MD'
-# Quickstart
-
-## Local dev
-
-### API
-```bash
-cd api
-npm install
-echo -e "PORT=8000\nNODE_ENV=development" > .env
-npm run dev   # nodemon; http://localhost:8000/health
+npm run dev   # nodemon
+# Verify: http://localhost:8000/health
 ```
 
-### Web (Vite)
+### 2) Web (separate terminal)
 ```bash
 cd web
 npm install
@@ -37,7 +28,10 @@ VITE_API_BASE_URL=http://localhost:8000 npm run dev
 # App at http://localhost:5173 (or 5174+ if busy)
 ```
 
-## Docker (compose)
+---
+
+## Docker compose (prod-like)
+
 ```bash
 # from repo root
 docker compose up --build
@@ -45,20 +39,17 @@ docker compose up --build
 # API → http://localhost:8000/health
 ```
 
-## Lint & format
-```bash
-npm run lint:all
-npm run format:all
-```
+---
 
 ## Troubleshooting
 
-**Port 8000 already in use**
+**Port conflicts**
 ```bash
+# Kill process on specific port
 lsof -nP -iTCP:8000 -sTCP:LISTEN | awk 'NR>1 {print $2}' | xargs kill -9
 ```
 
-**Rebuild containers from scratch**
+**Clean Docker restart**
 ```bash
 docker compose down -v && docker compose up --build
 ```
