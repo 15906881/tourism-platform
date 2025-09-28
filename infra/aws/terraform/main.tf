@@ -384,6 +384,7 @@ module "alb" {
 
 module "ecs" {
   source = "../../modules/ecs_service"
+  
   project_name             = var.project_name
   app_name                 = var.app_name
   container_port          = var.container_port
