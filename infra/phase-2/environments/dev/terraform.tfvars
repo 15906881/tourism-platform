@@ -14,4 +14,4 @@ tags                   = { env = "dev", app = "tourism-platform" }
 # DNS Configuration
 zone_id      = "Z02948903OLKTZ9QGG02Y"
 app_dns_name = "api.weblynk.app"
-alerts_email = "brock1kai@gmail.com"
+alerts_email = "senaigetachew@gmail.com"

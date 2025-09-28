@@ -61,3 +61,11 @@ resource "aws_cloudwatch_metric_alarm" "tg_unhealthy" {
   alarm_description = "One or more targets are unhealthy"
   alarm_actions     = [aws_sns_topic.alerts.arn]
 }
+
+# Email subscription for alerts
+resource "aws_sns_topic_subscription" "alerts_email" {
+  count     = var.alerts_email != "" ? 1 : 0
+  topic_arn = aws_sns_topic.alerts.arn
+  protocol  = "email"
+  endpoint  = var.alerts_email
+}
