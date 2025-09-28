@@ -18,7 +18,13 @@ resource "aws_cloudwatch_log_group" "app" {
 }
 
 data "aws_iam_policy_document" "ecs_tasks_assume" {
-  statement { actions = ["sts:AssumeRole"] principals { type = "Service" identifiers = ["ecs-tasks.amazonaws.com"] } }
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+  }
 }
 
 resource "aws_iam_role" "task_execution" {
@@ -37,7 +43,13 @@ resource "aws_iam_role" "task" {
 }
 
 data "aws_iam_policy_document" "task_secrets" {
-  statement { actions = ["secretsmanager:GetSecretValue"] resources = [var.secret_arn] }
+  statement {
+
+    actions   = ["secretsmanager:GetSecretValue"]
+
+    resources = [var.secret_arn]
+
+  }
 }
 
 resource "aws_iam_policy" "task_secrets" {
@@ -56,8 +68,19 @@ resource "aws_security_group" "service" {
   name = "${var.app_name}-svc-sg"
   description = "Allow traffic from ALB to app"
   vpc_id      = var.vpc_id
-  ingress { from_port = var.container_port to_port = var.container_port protocol = "tcp" security_groups = [var.alb_security_group_id] }
-  egress  { from_port = 0 to_port = 0 protocol = "-1" cidr_blocks = ["0.0.0.0/0"] }
+  ingress {
+  from_port       = var.container_port
+  to_port         = var.container_port
+  protocol        = "tcp"
+  security_groups = [var.alb_security_group_id]
+  description     = "From ALB"
+}
+  egress {
+  from_port   = 0
+  to_port     = 0
+  protocol    = "-1"
+  cidr_blocks = ["0.0.0.0/0"]
+}
 }
 
 resource "aws_ecs_task_definition" "this" {
@@ -122,3 +145,4 @@ resource "aws_ecs_service" "this" {
 output "cluster_name"              { value = aws_ecs_cluster.this.name }
 output "service_security_group_id" { value = aws_security_group.service.id }
 output "service_name"              { value = aws_ecs_service.this.name }
+
