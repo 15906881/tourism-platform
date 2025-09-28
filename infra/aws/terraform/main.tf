@@ -380,8 +380,6 @@ module "alb" {
   vpc_id           = aws_vpc.main.id
   public_subnet_ids = [for s in aws_subnet.public : s.id]
   certificate_arn  = var.certificate_arn
-  health_check_path = "/health"
-  tags = local.common_tags
 }
 
 module "ecs" {
