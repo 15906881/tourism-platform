@@ -7,7 +7,7 @@ terraform {
     }
   }
   # Backend config is supplied via backend.hcl during `terraform init`
-  backend "s3" {}
+  # backend "s3" {}
 }
 
 provider "aws" {
