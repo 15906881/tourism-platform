@@ -24,7 +24,15 @@ provider "aws" {
 # Data
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
-data "aws_availability_zones" "available" { state = "available" }
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+# Resolve the DB secret by NAME (no hard-coded ARN suffix)
+# Update the name here only if your secret path is different.
+data "aws_secretsmanager_secret" "app_db_url" {
+  name = "/tourism-platform/dev/app-db-url"
+}
 
 # Locals
 locals {
@@ -243,7 +251,7 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# IAM policy for Secrets Manager access
+# IAM policy for Secrets Manager access (exact secret ARN from data source)
 resource "aws_iam_role_policy" "ecs_secrets_policy" {
   name = "${local.project_name}-${local.env}-ecs-secrets-policy"
   role = aws_iam_role.ecs_execution_role.id
@@ -251,13 +259,9 @@ resource "aws_iam_role_policy" "ecs_secrets_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:GetSecretValue"
-        ]
-        Resource = [
-          "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:tourism-platform/dev/app-db-url-*"
-        ]
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = [data.aws_secretsmanager_secret.app_db_url.arn]
       }
     ]
   })
@@ -273,17 +277,17 @@ resource "aws_cloudwatch_log_group" "ecs_tourism_api" {
 # ECS Task Definition
 resource "aws_ecs_task_definition" "tourism_api" {
   family                   = "tourism-api"
-  network_mode            = "awsvpc"
+  network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                     = "256"
-  memory                  = "512"
-  execution_role_arn      = aws_iam_role.ecs_execution_role.arn
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
   
   container_definitions = jsonencode([
     {
-      name  = "api"
-      image = "${aws_ecr_repository.tourism_api.repository_url}:develop"
-      essential = true
+      name       = "api"
+      image      = "${aws_ecr_repository.tourism_api.repository_url}:develop"
+      essential  = true
       
       portMappings = [
         {
@@ -306,15 +310,12 @@ resource "aws_ecs_task_definition" "tourism_api" {
       secrets = [
         {
           name      = "APP_DB_URL"
-          valueFrom = "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:tourism-platform/dev/app-db-url-I97Qvt"
+          valueFrom = data.aws_secretsmanager_secret.app_db_url.arn
         }
       ]
       
       healthCheck = {
-        command = [
-          "CMD-SHELL",
-          "wget -qO- http://localhost:3000/health | grep -q '\"ok\":true' || exit 1"
-        ]
+        command     = ["CMD-SHELL", "wget -qO- http://localhost:3000/health | grep -q '\"ok\":true' || exit 1"]
         interval    = 15
         timeout     = 5
         retries     = 3
@@ -344,8 +345,8 @@ resource "aws_ecs_service" "tourism_api" {
   launch_type     = "FARGATE"
   
   network_configuration {
-    subnets         = [for s in aws_subnet.public : s.id]
-    security_groups = [aws_security_group.ecs_tasks.id]
+    subnets          = [for s in aws_subnet.public : s.id]
+    security_groups  = [aws_security_group.ecs_tasks.id]
     assign_public_ip = true
   }
   
