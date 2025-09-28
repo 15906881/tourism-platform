@@ -1,0 +1,67 @@
+name: Terraform Apply
+
+permissions:
+  contents: read
+  id-token: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+  push:
+    branches: [main]
+    paths:
+      - 'infra/**'
+
+concurrency:
+  group: terraform-apply-${{ inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
+jobs:
+  terraform-apply:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'dev' }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+          role-session-name: terraform-apply-${{ github.run_id }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ~1.0
+
+      - name: Terraform Init
+        working-directory: infra/phase-2/environments/${{ inputs.environment || 'dev' }}
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: infra/phase-2/environments/${{ inputs.environment || 'dev' }}
+        run: terraform plan -out=tfplan.out
+
+      - name: Terraform Apply
+        working-directory: infra/phase-2/environments/${{ inputs.environment || 'dev' }}
+        run: terraform apply -auto-approve tfplan.out
+
+      - name: Get Outputs
+        working-directory: infra/phase-2/environments/${{ inputs.environment || 'dev' }}
+        run: |
+          echo "## Infrastructure Outputs" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          terraform output >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
