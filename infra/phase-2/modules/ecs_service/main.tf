@@ -6,10 +6,10 @@ variable "vpc_id"                       { type = string }
 variable "private_subnet_ids"           { type = list(string) }
 variable "alb_target_group_arn"         { type = string }
 variable "alb_security_group_id"        { type = string }
-variable "cpu"                          { type = number, default = 512 }
-variable "memory"                       { type = number, default = 1024 }
-variable "desired_count"                { type = number, default = 1 }
-variable "health_check_grace_period_seconds" { type = number, default = 60 }
+// variable "cpu"                          { type = number, default = 512 }
+// variable "memory"                       { type = number, default = 1024 }
+// variable "desired_count"                { type = number, default = 1 }
+// variable "health_check_grace_period_seconds" { type = number, default = 60 }
 variable "region"                       { type = string }
 
 resource "aws_cloudwatch_log_group" "app" {
