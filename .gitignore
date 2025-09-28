@@ -10,3 +10,5 @@ crash.*.log
 *.bak*
 *.old
 *~
+**/.terraform/*
+**/.terraform.lock.hcl
