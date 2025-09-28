@@ -1,17 +1,12 @@
-# Node
-node_modules/
-dist/
-.build/
-.cache/
-.vite/
-coverage/
-*.log
-
-# Env
-.env
-api/.env
-web/.env
-
-# OS/Editor
-.DS_Store
-.vscode/
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+# local backups
+*.backup
+*.bak*
+*.old
+*~
