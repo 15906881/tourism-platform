@@ -371,3 +371,29 @@ output "vpc_endpoint_dynamodb_id" { value = aws_vpc_endpoint.dynamodb.id }
 output "ecs_cluster_name" { value = aws_ecs_cluster.main.name }
 output "ecs_service_name" { value = aws_ecs_service.tourism_api.name }
 output "ecr_repository_url" { value = aws_ecr_repository.tourism_api.repository_url }
+
+# Module calls (add to end of main.tf)
+module "alb" {
+  source = "../../modules/alb"
+  
+  app_name          = var.app_name
+  vpc_id           = aws_vpc.main.id
+  public_subnet_ids = [for s in aws_subnet.public : s.id]
+  certificate_arn  = var.certificate_arn
+  health_check_path = "/health"
+  tags = local.common_tags
+}
+
+module "ecs" {
+  source = "../../modules/ecs_service"
+  
+  app_name                 = var.app_name
+  container_port          = var.container_port
+  ecr_image_url          = var.ecr_image_url
+  secret_arn             = data.aws_secretsmanager_secret.app_db_url.arn
+  vpc_id                 = aws_vpc.main.id
+  private_subnet_ids     = [for s in aws_subnet.private : s.id]
+  alb_target_group_arn   = module.alb.target_group_arn
+  alb_security_group_id  = module.alb.alb_security_group_id
+  region = data.aws_region.current.name
+}
