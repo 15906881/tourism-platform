@@ -1,2 +1,0 @@
-aws ecs update-service --cluster tourism-platform-cluster --service tourism-platform-svc \
-  --task-definition tourism-platform --force-new-deployment
