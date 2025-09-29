@@ -1,0 +1,3 @@
+Scale tasks manually to stabilize:
+aws ecs update-service --cluster tourism-platform-cluster --service tourism-platform-svc --desired-count 4
+Roll back to known-good digest if needed (see rollback runbook).
