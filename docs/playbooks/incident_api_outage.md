@@ -1,4 +1,3 @@
-/docs/playbooks/incident_api_outage.md
 # Incident Response Playbook: API Outage
 
 **Last Reviewed:** YYYY-MM-DD  
@@ -6,121 +5,64 @@
 
 ---
 
+## Purpose
+Provide a standardized procedure for identifying, triaging, mitigating, and resolving API outages impacting `api.weblynk.app`. Ensures rapid recovery, consistent communication, and post-incident learning.
+
+---
+
 ## 1. Detection
 - CloudWatch alarm: `ALB 5xx > 1%`
-- Synthetic check: `/health` fails > 2 min
-- Customer reports in support channel
+- Health check: `/health` endpoint fails > 2 minutes
+- Synthetic monitor alerts
+- Customer report via support channel
+
+---
 
 ## 2. Initial Triage
-- Confirm issue in **ALB target health** + **ECS service events**
-- Run:  
-  ```bash
-  aws ecs describe-services --cluster tourism-platform-cluster --services tourism-platform-svc
+1. Confirm outage via ALB target health:
+   ```bash
+   aws elbv2 describe-target-health --target-group-arn $TG_ARN --region us-east-1
+Check ECS service events:
 
+bash
+Copy code
+aws ecs describe-services --cluster tourism-platform-cluster \
+  --services tourism-platform-svc --region us-east-1
+Validate logs:
+
+bash
+Copy code
+aws logs tail /ecs/tourism-platform --region us-east-1 --since 10m
 3. Mitigation
+If task count drift is detected, manually scale:
 
-Scale tasks manually to stabilize:
+bash
+Copy code
+aws ecs update-service --cluster tourism-platform-cluster \
+  --service tourism-platform-svc --desired-count 4
+If image regression suspected, follow ECS Service Rollback Runbook.
 
-aws ecs update-service --cluster tourism-platform-cluster --service tourism-platform-svc --desired-count 4
-
-
-Roll back to known-good digest if needed (see rollback runbook).
+If WAF false positive suspected, temporarily disable the blocking rule.
 
 4. Escalation
+Tier 1: Primary on-call engineer (PagerDuty alert)
 
-Tier 1: On-call engineer
+Tier 2: Secondary on-call engineer (if Tier 1 unresponsive within 15 minutes)
 
-Tier 2: API service owner
-
-Tier 3: Incident Commander (Ops Lead)
+Tier 3: Incident Commander (Ops Lead) — responsible for external communication and status updates
 
 5. Post-Incident
+Document Root Cause Analysis (RCA) under /docs/rca/YYYY-MM-DD_api_outage.md
 
-File RCA in /docs/rca/YYYY-MM-DD_api_outage.md
+Capture timeline: detection, mitigation, resolution, communication
 
-Review in weekly ops sync
+Schedule review in weekly Ops sync
 
+6. Validation
+Ensure ALB target health = 100% healthy
 
----
+Verify /health returns HTTP 200
 
-### `/docs/runbooks/rollback_ecs_service.md`
-```markdown
-# Runbook: ECS Service Rollback
+Confirm CloudWatch alarms reset
 
-**Last Tested:** YYYY-MM-DD  
-**Owner:** Ops Team  
-
----
-
-## Purpose
-Return the API service to a stable, known-good image when a deploy causes issues.
-
-## Prerequisites
-- Known-good digest (pinned SHA256 from ECR)
-- IAM permissions to update ECS task definitions
-
-## Procedure
-1. Save the good digest:
-   ```bash
-   GOOD=sha256:<digest>
-
-
-Generate rollback task definition:
-
-aws ecs describe-task-definition --task-definition tourism-platform:latest > /tmp/td.json
-jq --arg d "$GOOD" '.taskDefinition
-  | .containerDefinitions[0].image = "247006907925.dkr.ecr.us-east-1.amazonaws.com/tourism-platform/api@" + $d
-  | del(.taskDefinitionArn,.revision,.status,.registeredAt,.registeredBy)
-' /tmp/td.json > /tmp/td-rollback.json
-
-
-Register rollback task definition:
-
-aws ecs register-task-definition --cli-input-json file:///tmp/td-rollback.json
-
-
-Update service:
-
-aws ecs update-service --cluster tourism-platform-cluster --service tourism-platform-svc \
-  --task-definition tourism-platform --force-new-deployment
-
-Validation
-
-Confirm new tasks are healthy
-
-Verify /health returns 200
-
-Monitor ALB target group for stability
-
-
----
-
-### `/docs/oncall/roster.md`
-```markdown
-# On-Call Assignments & Escalation Paths
-
-**Last Updated:** YYYY-MM-DD  
-**Owner:** Ops Lead  
-
----
-
-## Weekly Rotation
-- **Primary:** Engineer A (YYYY-MM-DD → YYYY-MM-DD)
-- **Secondary:** Engineer B
-- **Escalation Manager:** Engineer C
-
-Roster is synced with Google Calendar + PagerDuty.
-
----
-
-## Escalation Policy
-- **Tier 1:** Primary on-call — respond within 15 min
-- **Tier 2:** Secondary — if Tier 1 does not respond in 15 min
-- **Tier 3:** Escalation Manager — assume Incident Commander role
-
----
-
-## Communication Channels
-- Alerts: PagerDuty + Slack `#infra-alerts`
-- War Room: Slack `#incident-war-room`
-- Escalation calls: Zoom bridge [link here]
+Confirm SLO dashboards show recovery within thresholds
