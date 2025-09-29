@@ -15,3 +15,10 @@ web/.env
 # OS/Editor
 .DS_Store
 .vscode/
+
+# Terraform
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate*
+**/*.tfvars.bak
+**/task-def-*.json
