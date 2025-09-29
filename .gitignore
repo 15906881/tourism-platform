@@ -22,3 +22,8 @@ web/.env
 **/terraform.tfstate*
 **/*.tfvars.bak
 **/task-def-*.json
+
+# Next.js
+**/.next/
+**/next-env.d.ts
+**/out/
