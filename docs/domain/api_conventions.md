@@ -22,8 +22,6 @@
 - Adding new error codes
 - Making required fields optional
 
----
-
 ## Pagination
 
 ### Offset-Based (Default)
@@ -86,8 +84,6 @@ GET /v1/tenants/9f4a.../listings?cursor=eyJpZCI6IjJiMGQiLCJ0IjoxNjk1OTQ3NzAwfQ&l
 - Cursor strings are opaque, do not parse or construct manually
 - Cursor pagination not implemented yet (use offset for now)
 
----
-
 ## Filtering & Sorting
 
 ### Common Filter Parameters
@@ -105,8 +101,6 @@ Example:
 ```
 GET /v1/tenants/{id}/listings?status=published&sort_by=updated_at&sort_order=desc
 ```
-
----
 
 ## Authentication
 
@@ -129,8 +123,6 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
 - `GET /v1/templates/{id}` - Template details
 - `POST /v1/tenants/{id}/leads` - Lead submission (with captcha)
 - `POST /v1/invites/{token}/accept` - Accept invite
-
----
 
 ## Error Responses
 
@@ -227,8 +219,6 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
----
-
 ## Standard Headers
 
 ### Request Headers
@@ -294,8 +284,6 @@ X-Content-Type-Options: nosniff
 Referrer-Policy: no-referrer
 ```
 
----
-
 ## Rate Limiting
 
 ### Default Limits
@@ -331,8 +319,6 @@ Public endpoints (lead submission) enforce additional protections:
 3. Retry with same `Idempotency-Key`
 4. Use exponential backoff if no `Retry-After` provided
 
----
-
 ## Conditional Requests & Caching
 
 ### ETags (Resource Versioning)
@@ -363,8 +349,6 @@ curl -H "If-None-Match: W/listing:abc123:1695947700" \
 - Reduced bandwidth (304 = no body)
 - Faster response times (cache validation only)
 - Optimistic locking (detect concurrent updates)
-
----
 
 ## Idempotency
 
@@ -433,8 +417,6 @@ curl -X POST https://api.weblynk.app/v1/tenants/9f4a.../listings \
 # Error: parameters don't match original request
 ```
 
----
-
 ## Date & Time Formats
 
 ### ISO 8601 DateTime (with timezone)
@@ -456,8 +438,6 @@ Server interprets as:
 - `created_after`: `2025-09-01T00:00:00Z` (start of day UTC)
 - `created_before`: `2025-09-30T23:59:59Z` (end of day UTC)
 
----
-
 ## Field Naming Conventions
 
 ### JSON Fields
@@ -477,8 +457,6 @@ Server interprets as:
 - Use `null` (not empty string or omit)
 - Example: `"primary_media_id": null`
 
----
-
 ## Multitenancy
 
 ### Tenant Scoping
@@ -491,8 +469,6 @@ Server interprets as:
 - **Never allowed for normal users**
 - `platform_admin` role can use `X-Tenant-Id` header on `/admin/*` routes only
 - Regular users switch tenants via `POST /me/switch-tenant` (issues new JWT)
-
----
 
 ## File Uploads
 
@@ -519,8 +495,6 @@ Content-Type: multipart/form-data
 }
 ```
 
----
-
 ## CORS
 
 ### Allowed Origins (Production)
@@ -536,8 +510,6 @@ Content-Type: multipart/form-data
 - `RateLimit-*`
 - `Idempotency-Key`
 
----
-
 ## Webhooks (Future)
 
 ### Event Format
@@ -547,8 +519,7 @@ Content-Type: multipart/form-data
   "timestamp": "2025-09-28T23:35:00Z",
   "data": {
     "id": "8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d",
-    "tenant_id": "9f4a7b2c-8d3e-4f1a-9c5b-7e2d8f4a6b3c",
-    ...
+    "tenant_id": "9f4a7b2c-8d3e-4f1a-9c5b-7e2d8f4a6b3c"
   }
 }
 ```
@@ -558,18 +529,54 @@ Content-Type: multipart/form-data
 - Retry with exponential backoff (max 3 attempts)
 - Signature in `X-Webhook-Signature` header (HMAC SHA256)
 
----
+## Operational Guarantees
+
+### Availability
+- **Target**: 99.9% monthly uptime
+- **Excludes**: Scheduled maintenance (announced 7 days in advance)
+- **Status page**: https://status.weblynk.app
+
+### Performance SLOs (Service Level Objectives)
+
+| Route Class | P50 Latency | P95 Latency | P99 Latency |
+|-------------|-------------|-------------|-------------|
+| **Read** (GET detail) | < 100ms | < 200ms | < 300ms |
+| **List** (GET with pagination) | < 150ms | < 300ms | < 500ms |
+| **Write** (POST/PUT/PATCH) | < 200ms | < 400ms | < 500ms |
+| **Media upload** | < 1s | < 3s | < 5s |
+
+Measured from API gateway to response (excludes network transit).
+
+### Rate Limiting Implementation
+- **Algorithm**: Token bucket (smooth traffic, allows bursts)
+- **Window**: Rolling 1-hour window
+- **Burst allowance**: 20% over limit for 60 seconds
+- **Reset**: Gradual refill (not fixed window cliff)
+
+### Monitoring
+Track these metrics:
+- Request rate by endpoint
+- Error rate by status code
+- P95/P99 latency per route
+- Rate limit hit rate (429 responses)
+- Cache hit rate (304 responses)
+- Idempotency cache hit rate
 
 ## Summary
 
 **Key Principles:**
-- ✅ Simple, flat pagination (no nested `pagination` object)
-- ✅ Consistent error format with machine-readable codes
-- ✅ Idempotency support for safe retries
-- ✅ Rate limiting with clear headers
-- ✅ Request tracing via X-Request-Id
-- ✅ Tenant scoping automatic from JWT
-- ✅ ISO 8601 timestamps in UTC
-- ✅ snake_case field names
+- Simple, flat pagination (no nested objects) with cursor support planned
+- Consistent error format with machine-readable codes
+- Idempotency support with conflict detection (409)
+- Conditional requests via ETags (304 Not Modified)
+- Rate limiting with token bucket algorithm
+- Request tracing via X-Request-Id (client-supplied or generated)
+- Tenant scoping automatic from JWT
+- ISO 8601 timestamps in UTC
+- snake_case field names
+- Unknown fields rejected (prevent typos)
+- Security headers enforced (HSTS, nosniff)
 
-**Reference:** `docs/openapi-v1.yaml` is source of truth for all endpoints.
+**Reference:** 
+- `docs/openapi-v1.yaml` - Source of truth for all endpoints
+- This document - Implementation conventions and patterns
