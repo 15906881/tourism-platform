@@ -1,0 +1,52 @@
+{
+    "ResourceRecordSets": [
+        {
+            "Name": "weblynk.app.",
+            "Type": "NS",
+            "TTL": 172800,
+            "ResourceRecords": [
+                {
+                    "Value": "ns-1498.awsdns-59.org."
+                },
+                {
+                    "Value": "ns-1698.awsdns-20.co.uk."
+                },
+                {
+                    "Value": "ns-575.awsdns-07.net."
+                },
+                {
+                    "Value": "ns-180.awsdns-22.com."
+                }
+            ]
+        },
+        {
+            "Name": "weblynk.app.",
+            "Type": "SOA",
+            "TTL": 900,
+            "ResourceRecords": [
+                {
+                    "Value": "ns-1498.awsdns-59.org. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400"
+                }
+            ]
+        },
+        {
+            "Name": "api.weblynk.app.",
+            "Type": "A",
+            "AliasTarget": {
+                "HostedZoneId": "Z35SXDOTRQ7X7K",
+                "DNSName": "tourism-platform-alb-1238003240.us-east-1.elb.amazonaws.com.",
+                "EvaluateTargetHealth": true
+            }
+        },
+        {
+            "Name": "_1b2788915112afbbc3ada438b605507d.api.weblynk.app.",
+            "Type": "CNAME",
+            "TTL": 60,
+            "ResourceRecords": [
+                {
+                    "Value": "_397ae78ffe61ad05e31d46e921b5a025.xlfgrmvvlj.acm-validations.aws."
+                }
+            ]
+        }
+    ]
+}
