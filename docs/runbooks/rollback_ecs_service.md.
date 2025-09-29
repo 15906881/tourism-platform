@@ -1,0 +1,49 @@
+docs/runbooks/rollback_ecs_service.md
+# Runbook: ECS Service Rollback
+
+**Last Tested:** YYYY-MM-DD  
+**Owner:** Ops Team  
+
+---
+
+## Purpose
+Return the API service to a stable, known-good image when a deploy causes issues.
+
+## Prerequisites
+- Known-good digest (pinned SHA256 from ECR)
+- IAM permissions to update ECS task definitions
+
+---
+
+## Procedure
+
+### 1. Generate rollback task definition
+```bash
+aws ecs describe-task-definition --task-definition tourism-platform:latest > /tmp/td.json
+jq --arg d "$GOOD" '.taskDefinition
+  | .containerDefinitions[0].image = "247006907925.dkr.ecr.us-east-1.amazonaws.com/tourism-platform/api@" + $d
+  | del(.taskDefinitionArn,.revision,.status,.registeredAt,.registeredBy)
+' /tmp/td.json > /tmp/td-rollback.json
+
+2. Register rollback task definition
+aws ecs register-task-definition --cli-input-json file:///tmp/td-rollback.json
+
+3. Update Service
+aws ecs update-service --cluster tourism-platform-cluster --service tourism-platform-svc \
+  --task-definition tourism-platform --force-new-deployment
+
+4. Validation
+
+Confirm new tasks are healthy in ECS
+
+Verify /health returns 200
+
+Check ALB target group shows all targets as healthy
+
+Notes
+
+Do not run in production without Ops Lead approval.
+
+Keep at least one revision pinned as “known-good”.
+
+Document rollback execution in the incident ticket.
