@@ -1,426 +1,399 @@
 /**
- * Weblynk Luxury Tailwind Preset
- * High-end design system for tourism/hospitality platform
- * 
- * Usage in tailwind.config.js:
- * module.exports = {
- *   presets: [require('./packages/ui/tailwind.luxury-preset.js')],
- *   content: ['./src/**\/*.{ts,tsx}'],
- * };
+ * Weblynk Luxury Base Styles
+ * Base CSS to complement Tailwind preset
+ * Import after Tailwind directives
  */
 
-module.exports = {
-  theme: {
-    extend: {
-      // ===================================
-      // Colors
-      // ===================================
-      colors: {
-        // Backgrounds
-        bg: '#0F1115',
-        surface: {
-          DEFAULT: '#141821',
-          2: '#191E28',
-          3: '#1F2533',
-        },
-        
-        // Text
-        text: {
-          DEFAULT: '#EAEAF0',
-          muted: '#A6A9B6',
-          subtle: '#6B7280',
-        },
-        
-        // Primary (Champagne Gold)
-        primary: {
-          DEFAULT: '#C5A572',
-          hover: '#D4B583',
-          light: '#E5D5B3',
-          dark: '#A68D5F',
-        },
-        
-        // Accent (Amethyst)
-        accent: {
-          DEFAULT: '#6B4E9A',
-          hover: '#7D5CAB',
-          light: '#9B7ECC',
-          dark: '#4F3670',
-        },
-        
-        // Borders
-        border: {
-          DEFAULT: 'rgba(255, 255, 255, 0.08)',
-          focus: 'rgba(197, 165, 114, 0.3)',
-          hover: 'rgba(255, 255, 255, 0.12)',
-        },
-        
-        // States
-        disabled: 'rgba(255, 255, 255, 0.05)',
-        error: '#DC2626',
-        success: '#10B981',
-        warning: '#F59E0B',
-        info: '#3B82F6',
-      },
-      
-      // ===================================
-      // Typography
-      // ===================================
-      fontFamily: {
-        heading: ['Cormorant Garamond', 'Playfair Display', 'ui-serif', 'Georgia', 'serif'],
-        body: ['Inter', '-apple-system', 'system-ui', 'sans-serif'],
-      },
-      
-      fontSize: {
-        // Display sizes (for hero sections)
-        'display-lg': ['64px', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
-        'display': ['56px', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
-        
-        // Headings
-        'h1': ['48px', { lineHeight: '1.2', letterSpacing: '-0.01em' }],
-        'h2': ['36px', { lineHeight: '1.2', letterSpacing: '-0.01em' }],
-        'h3': ['24px', { lineHeight: '1.3' }],
-        'h4': ['20px', { lineHeight: '1.4' }],
-        
-        // Body
-        'body-lg': ['18px', { lineHeight: '1.75' }],
-        'body': ['16px', { lineHeight: '1.75' }],
-        'body-sm': ['14px', { lineHeight: '1.6' }],
-        
-        // Utility
-        'label': ['13px', { lineHeight: '1.4', letterSpacing: '0.05em' }],
-        'caption': ['11px', { lineHeight: '1.4', letterSpacing: '0.05em' }],
-      },
-      
-      fontWeight: {
-        regular: '400',
-        medium: '500',
-        semibold: '600',
-        bold: '700',
-      },
-      
-      // ===================================
-      // Spacing
-      // ===================================
-      spacing: {
-        'xs': '8px',
-        'sm': '12px',
-        'md': '16px',
-        'lg': '24px',
-        'xl': '36px',
-        '2xl': '56px',
-        '3xl': '80px',
-        '4xl': '120px',
-      },
-      
-      // ===================================
-      // Border Radius
-      // ===================================
-      borderRadius: {
-        'xs': '6px',
-        'sm': '10px',
-        'md': '14px',
-        'lg': '18px',
-        'xl': '24px',
-        '2xl': '32px',
-        'pill': '999px',
-      },
-      
-      // ===================================
-      // Box Shadow
-      // ===================================
-      boxShadow: {
-        'sm': '0 2px 12px rgba(0, 0, 0, 0.25)',
-        'md': '0 8px 30px rgba(0, 0, 0, 0.35)',
-        'lg': '0 16px 48px rgba(0, 0, 0, 0.45)',
-        'xl': '0 24px 64px rgba(0, 0, 0, 0.55)',
-        'glow': '0 0 24px rgba(197, 165, 114, 0.15)',
-        'glow-lg': '0 0 48px rgba(197, 165, 114, 0.25)',
-        'inner': 'inset 0 2px 8px rgba(0, 0, 0, 0.25)',
-      },
-      
-      // ===================================
-      // Background Images (Gradients)
-      // ===================================
-      backgroundImage: {
-        'gradient-gold': 'linear-gradient(135deg, #C5A572 0%, #D4B583 100%)',
-        'gradient-gold-vertical': 'linear-gradient(180deg, #C5A572 0%, #D4B583 100%)',
-        'gradient-surface': 'linear-gradient(180deg, #141821 0%, #0F1115 100%)',
-        'gradient-overlay': 'linear-gradient(180deg, rgba(15, 17, 21, 0) 0%, rgba(15, 17, 21, 0.8) 100%)',
-        'gradient-overlay-dark': 'linear-gradient(180deg, rgba(15, 17, 21, 0) 0%, rgba(15, 17, 21, 0.95) 100%)',
-        'noise': "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E\")",
-      },
-      
-      // ===================================
-      // Transition Duration
-      // ===================================
-      transitionDuration: {
-        'fast': '180ms',
-        'standard': '350ms',
-        'slow': '500ms',
-      },
-      
-      // ===================================
-      // Transition Timing Function
-      // ===================================
-      transitionTimingFunction: {
-        'standard': 'cubic-bezier(0.22, 0.61, 0.36, 1)',
-        'decelerate': 'cubic-bezier(0.05, 0.7, 0.1, 1.0)',
-        'sharp': 'cubic-bezier(0.4, 0.0, 0.2, 1)',
-      },
-      
-      // ===================================
-      // Animation
-      // ===================================
-      keyframes: {
-        'fade-in': {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        'slide-up': {
-          '0%': { opacity: '0', transform: 'translateY(20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        'slide-down': {
-          '0%': { opacity: '0', transform: 'translateY(-20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        'scale-in': {
-          '0%': { opacity: '0', transform: 'scale(0.95)' },
-          '100%': { opacity: '1', transform: 'scale(1)' },
-        },
-        'glow': {
-          '0%, 100%': { boxShadow: '0 0 24px rgba(197, 165, 114, 0.15)' },
-          '50%': { boxShadow: '0 0 32px rgba(197, 165, 114, 0.25)' },
-        },
-        'shimmer': {
-          '0%': { backgroundPosition: '200% 0' },
-          '100%': { backgroundPosition: '-200% 0' },
-        },
-      },
-      
-      animation: {
-        'fade-in': 'fade-in 350ms cubic-bezier(0.22, 0.61, 0.36, 1)',
-        'slide-up': 'slide-up 350ms cubic-bezier(0.05, 0.7, 0.1, 1.0)',
-        'slide-down': 'slide-down 350ms cubic-bezier(0.05, 0.7, 0.1, 1.0)',
-        'scale-in': 'scale-in 350ms cubic-bezier(0.22, 0.61, 0.36, 1)',
-        'glow': 'glow 2s cubic-bezier(0.22, 0.61, 0.36, 1) infinite',
-        'shimmer': 'shimmer 2s linear infinite',
-      },
-      
-      // ===================================
-      // Z-Index
-      // ===================================
-      zIndex: {
-        'dropdown': '1000',
-        'sticky': '1020',
-        'fixed': '1030',
-        'modal-backdrop': '1040',
-        'modal': '1050',
-        'popover': '1060',
-        'tooltip': '1070',
-      },
-      
-      // ===================================
-      // Backdrop Blur
-      // ===================================
-      backdropBlur: {
-        'xs': '2px',
-        'sm': '4px',
-        'md': '8px',
-        'lg': '12px',
-        'xl': '16px',
-      },
-    },
-  },
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===================================
+   Global Base Styles
+   =================================== */
+
+@layer base {
+  * {
+    @apply antialiased;
+  }
   
-  plugins: [
-    // Custom plugin for luxury-specific utilities
-    function({ addComponents, theme }) {
-      addComponents({
-        // ===================================
-        // Button Components
-        // ===================================
-        '.btn-primary': {
-          fontFamily: theme('fontFamily.body'),
-          fontSize: theme('fontSize.body[0]'),
-          fontWeight: theme('fontWeight.semibold'),
-          letterSpacing: '0.5px',
-          padding: '14px 32px',
-          background: theme('backgroundImage.gradient-gold'),
-          color: theme('colors.bg'),
-          borderRadius: theme('borderRadius.md'),
-          boxShadow: theme('boxShadow.sm'),
-          transition: `all ${theme('transitionDuration.standard')} ${theme('transitionTimingFunction.standard')}`,
-          cursor: 'pointer',
-          border: 'none',
-          
-          '&:hover': {
-            transform: 'translateY(-2px)',
-            boxShadow: `${theme('boxShadow.md')}, ${theme('boxShadow.glow')}`,
-          },
-          
-          '&:active': {
-            transform: 'translateY(0)',
-            boxShadow: theme('boxShadow.sm'),
-          },
-          
-          '&:disabled': {
-            opacity: '0.4',
-            cursor: 'not-allowed',
-            transform: 'none',
-          },
-        },
-        
-        '.btn-secondary': {
-          fontFamily: theme('fontFamily.body'),
-          fontSize: theme('fontSize.body[0]'),
-          fontWeight: theme('fontWeight.semibold'),
-          letterSpacing: '0.5px',
-          padding: '14px 32px',
-          background: 'transparent',
-          color: theme('colors.primary.DEFAULT'),
-          border: `1px solid ${theme('colors.primary.DEFAULT')}`,
-          borderRadius: theme('borderRadius.md'),
-          transition: `all ${theme('transitionDuration.standard')} ${theme('transitionTimingFunction.standard')}`,
-          cursor: 'pointer',
-          
-          '&:hover': {
-            background: 'rgba(197, 165, 114, 0.1)',
-            boxShadow: theme('boxShadow.glow'),
-          },
-        },
-        
-        '.btn-ghost': {
-          fontFamily: theme('fontFamily.body'),
-          fontSize: theme('fontSize.body[0]'),
-          fontWeight: theme('fontWeight.medium'),
-          padding: '12px 24px',
-          background: 'transparent',
-          color: theme('colors.text.DEFAULT'),
-          border: 'none',
-          borderRadius: theme('borderRadius.md'),
-          transition: `all ${theme('transitionDuration.fast')} ${theme('transitionTimingFunction.standard')}`,
-          cursor: 'pointer',
-          
-          '&:hover': {
-            background: theme('colors.surface.2'),
-          },
-        },
-        
-        // ===================================
-        // Card Component
-        // ===================================
-        '.card': {
-          background: theme('colors.surface.DEFAULT'),
-          border: `1px solid ${theme('colors.border.DEFAULT')}`,
-          borderRadius: theme('borderRadius.lg'),
-          boxShadow: theme('boxShadow.sm'),
-          padding: theme('spacing.lg'),
-          transition: `all ${theme('transitionDuration.standard')} ${theme('transitionTimingFunction.standard')}`,
-          
-          '&:hover': {
-            borderColor: 'rgba(197, 165, 114, 0.2)',
-            boxShadow: theme('boxShadow.md'),
-            transform: 'translateY(-2px)',
-          },
-        },
-        
-        '.card-interactive': {
-          cursor: 'pointer',
-        },
-        
-        // ===================================
-        // Input Component
-        // ===================================
-        '.input': {
-          fontFamily: theme('fontFamily.body'),
-          fontSize: theme('fontSize.body[0]'),
-          padding: '12px 16px',
-          background: theme('colors.surface.2'),
-          color: theme('colors.text.DEFAULT'),
-          border: `1px solid ${theme('colors.border.DEFAULT')}`,
-          borderRadius: theme('borderRadius.md'),
-          transition: `all ${theme('transitionDuration.fast')} ${theme('transitionTimingFunction.standard')}`,
-          
-          '&:focus': {
-            outline: 'none',
-            borderColor: theme('colors.border.focus'),
-            boxShadow: `0 0 0 3px rgba(197, 165, 114, 0.1)`,
-          },
-          
-          '&::placeholder': {
-            color: theme('colors.text.subtle'),
-          },
-          
-          '&:disabled': {
-            background: theme('colors.disabled'),
-            cursor: 'not-allowed',
-          },
-        },
-        
-        // ===================================
-        // Badge Component
-        // ===================================
-        '.badge': {
-          display: 'inline-flex',
-          alignItems: 'center',
-          fontSize: theme('fontSize.caption[0]'),
-          fontWeight: theme('fontWeight.semibold'),
-          padding: '4px 12px',
-          borderRadius: theme('borderRadius.pill'),
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-        },
-        
-        '.badge-primary': {
-          background: 'rgba(197, 165, 114, 0.15)',
-          color: theme('colors.primary.DEFAULT'),
-        },
-        
-        '.badge-success': {
-          background: 'rgba(16, 185, 129, 0.15)',
-          color: theme('colors.success'),
-        },
-        
-        '.badge-error': {
-          background: 'rgba(220, 38, 38, 0.15)',
-          color: theme('colors.error'),
-        },
-        
-        // ===================================
-        // Divider
-        // ===================================
-        '.divider': {
-          height: '1px',
-          background: theme('colors.border.DEFAULT'),
-          border: 'none',
-        },
-        
-        '.divider-gold': {
-          height: '1px',
-          background: theme('backgroundImage.gradient-gold'),
-          border: 'none',
-        },
-        
-        // ===================================
-        // Glass Effect
-        // ===================================
-        '.glass': {
-          background: 'rgba(20, 24, 33, 0.6)',
-          backdropFilter: 'blur(12px)',
-          border: `1px solid ${theme('colors.border.DEFAULT')}`,
-        },
-        
-        // ===================================
-        // Text Gradient
-        // ===================================
-        '.text-gradient-gold': {
-          background: theme('backgroundImage.gradient-gold'),
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-        },
-      });
-    },
-  ],
-};
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply bg-bg text-text font-body;
+    @apply text-body;
+  }
+  
+  /* Headings */
+  h1 {
+    @apply font-heading text-h1 font-semibold;
+  }
+  
+  h2 {
+    @apply font-heading text-h2 font-semibold;
+  }
+  
+  h3 {
+    @apply font-heading text-h3 font-semibold;
+  }
+  
+  h4 {
+    @apply font-body text-h4 font-semibold;
+  }
+  
+  /* Links */
+  a {
+    @apply transition-colors duration-fast;
+  }
+  
+  a:hover {
+    @apply text-primary;
+  }
+  
+  /* Selection */
+  ::selection {
+    @apply bg-primary text-bg;
+  }
+  
+  /* Scrollbar (Webkit) */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-surface;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-3 rounded-pill;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/50;
+  }
+  
+  /* Focus visible (accessibility) */
+  :focus-visible {
+    @apply outline-none ring-2 ring-border-focus ring-offset-2 ring-offset-bg;
+  }
+}
+
+/* ===================================
+   Utility Classes
+   =================================== */
+
+@layer utilities {
+  /* Text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  
+  /* Noise texture overlay */
+  .noise-overlay {
+    @apply relative;
+  }
+  
+  .noise-overlay::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none;
+    @apply bg-noise opacity-[0.02];
+    @apply mix-blend-overlay;
+  }
+  
+  /* Gradient text */
+  .text-gold {
+    @apply bg-gradient-gold bg-clip-text text-transparent;
+  }
+  
+  /* Safe area padding (for mobile) */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Hide scrollbar but keep functionality */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ===================================
+   Component Variants
+   =================================== */
+
+@layer components {
+  /* Container with luxury max-width */
+  .container-luxury {
+    @apply mx-auto px-lg;
+    max-width: 1440px;
+  }
+  
+  @media (max-width: 768px) {
+    .container-luxury {
+      @apply px-md;
+    }
+  }
+  
+  /* Section spacing */
+  .section {
+    @apply py-3xl;
+  }
+  
+  @media (max-width: 768px) {
+    .section {
+      @apply py-2xl;
+    }
+  }
+  
+  /* Hero section */
+  .hero {
+    @apply min-h-screen flex items-center justify-center;
+    @apply relative overflow-hidden;
+  }
+  
+  /* Overlay for hero images */
+  .hero-overlay {
+    @apply absolute inset-0 bg-gradient-overlay;
+  }
+  
+  /* Skeleton loader */
+  .skeleton {
+    @apply animate-pulse bg-surface-2 rounded-md;
+  }
+  
+  /* Empty state */
+  .empty-state {
+    @apply text-center py-3xl;
+  }
+  
+  .empty-state-icon {
+    @apply mx-auto mb-lg text-text-muted;
+    @apply w-16 h-16;
+  }
+  
+  .empty-state-title {
+    @apply text-h3 font-heading mb-sm;
+  }
+  
+  .empty-state-description {
+    @apply text-text-muted max-w-md mx-auto;
+  }
+  
+  /* Loading spinner */
+  .spinner {
+    @apply inline-block w-6 h-6;
+    @apply border-2 border-border border-t-primary;
+    @apply rounded-full animate-spin;
+  }
+  
+  /* Tooltip */
+  .tooltip {
+    @apply absolute z-tooltip;
+    @apply bg-surface-3 text-body-sm;
+    @apply px-sm py-xs rounded-md;
+    @apply shadow-md border border-border;
+    @apply opacity-0 invisible;
+    @apply transition-all duration-fast;
+  }
+  
+  .tooltip-trigger:hover .tooltip {
+    @apply opacity-100 visible;
+  }
+  
+  /* Modal backdrop */
+  .modal-backdrop {
+    @apply fixed inset-0 z-modal-backdrop;
+    @apply bg-bg/80 backdrop-blur-md;
+    @apply flex items-center justify-center;
+    @apply p-lg;
+  }
+  
+  /* Modal container */
+  .modal {
+    @apply relative z-modal;
+    @apply bg-surface border border-border;
+    @apply rounded-xl shadow-xl;
+    @apply max-w-2xl w-full;
+    @apply max-h-[90vh] overflow-y-auto;
+  }
+  
+  .modal-header {
+    @apply p-xl border-b border-border;
+  }
+  
+  .modal-body {
+    @apply p-xl;
+  }
+  
+  .modal-footer {
+    @apply p-xl border-t border-border;
+    @apply flex gap-sm justify-end;
+  }
+  
+  /* Dropdown */
+  .dropdown {
+    @apply absolute z-dropdown;
+    @apply bg-surface border border-border;
+    @apply rounded-lg shadow-lg;
+    @apply min-w-[200px];
+    @apply opacity-0 invisible;
+    @apply transition-all duration-fast;
+    @apply translate-y-2;
+  }
+  
+  .dropdown-trigger:hover .dropdown,
+  .dropdown-trigger:focus .dropdown {
+    @apply opacity-100 visible translate-y-0;
+  }
+  
+  .dropdown-item {
+    @apply px-md py-sm;
+    @apply text-body-sm;
+    @apply hover:bg-surface-2;
+    @apply transition-colors duration-fast;
+    @apply cursor-pointer;
+  }
+  
+  .dropdown-divider {
+    @apply h-px bg-border my-xs;
+  }
+  
+  /* Table */
+  .table-container {
+    @apply overflow-x-auto rounded-lg border border-border;
+  }
+  
+  .table {
+    @apply w-full text-left;
+  }
+  
+  .table thead {
+    @apply bg-surface-2 border-b border-border;
+  }
+  
+  .table th {
+    @apply px-lg py-md;
+    @apply text-label uppercase;
+    @apply text-text-muted;
+    @apply font-semibold;
+  }
+  
+  .table td {
+    @apply px-lg py-md;
+    @apply border-b border-border;
+  }
+  
+  .table tbody tr:hover {
+    @apply bg-surface-2;
+  }
+  
+  .table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  
+  /* Pagination */
+  .pagination {
+    @apply flex items-center gap-sm;
+  }
+  
+  .pagination-button {
+    @apply px-md py-sm;
+    @apply rounded-md;
+    @apply border border-border;
+    @apply hover:border-border-hover;
+    @apply transition-colors duration-fast;
+    @apply disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  
+  .pagination-button.active {
+    @apply bg-primary text-bg;
+    @apply border-primary;
+  }
+  
+  /* Tabs */
+  .tabs {
+    @apply flex gap-md border-b border-border;
+  }
+  
+  .tab {
+    @apply px-lg py-md;
+    @apply text-body font-medium;
+    @apply text-text-muted;
+    @apply border-b-2 border-transparent;
+    @apply transition-all duration-fast;
+    @apply cursor-pointer;
+  }
+  
+  .tab:hover {
+    @apply text-text;
+  }
+  
+  .tab.active {
+    @apply text-primary border-primary;
+  }
+  
+  /* Status indicators */
+  .status-dot {
+    @apply inline-block w-2 h-2 rounded-full;
+  }
+  
+  .status-dot.online {
+    @apply bg-success;
+  }
+  
+  .status-dot.offline {
+    @apply bg-text-subtle;
+  }
+  
+  .status-dot.busy {
+    @apply bg-error;
+  }
+  
+  .status-dot.away {
+    @apply bg-warning;
+  }
+}
+
+/* ===================================
+   Print Styles
+   =================================== */
+
+@media print {
+  body {
+    @apply bg-white text-black;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* ===================================
+   Reduced Motion
+   =================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
