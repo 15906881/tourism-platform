@@ -1,5 +1,0 @@
-aws ecs describe-task-definition --task-definition tourism-platform:latest > /tmp/td.json
-jq --arg d "$GOOD" '.taskDefinition
-  | .containerDefinitions[0].image = "247006907925.dkr.ecr.us-east-1.amazonaws.com/tourism-platform/api@" + $d
-  | del(.taskDefinitionArn,.revision,.status,.registeredAt,.registeredBy)
-' /tmp/td.json > /tmp/td-rollback.json
