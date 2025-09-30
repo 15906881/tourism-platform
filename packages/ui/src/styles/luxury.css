@@ -1,0 +1,53 @@
+/* Luxury Design System - CSS Custom Properties */
+
+:root {
+  /* Typography */
+  --font-display: 'Playfair Display', serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  
+  /* Theme colors (default: gold) */
+  --color-primary-50: 254 252 243;
+  --color-primary-100: 254 247 224;
+  --color-primary-500: 244 183 62;
+  --color-primary-600: 230 152 35;
+  --color-primary-900: 124 75 25;
+}
+
+[data-theme="gold"] {
+  --color-primary-50: 254 252 243;
+  --color-primary-100: 254 247 224;
+  --color-primary-500: 244 183 62;
+  --color-primary-600: 230 152 35;
+  --color-primary-900: 124 75 25;
+}
+
+[data-theme="rose"] {
+  --color-primary-50: 254 242 243;
+  --color-primary-100: 253 230 231;
+  --color-primary-500: 231 76 100;
+  --color-primary-600: 212 47 82;
+  --color-primary-900: 128 27 58;
+}
+
+[data-theme="navy"] {
+  --color-primary-50: 240 244 248;
+  --color-primary-100: 217 226 236;
+  --color-primary-500: 98 125 152;
+  --color-primary-600: 72 101 129;
+  --color-primary-900: 16 42 67;
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
