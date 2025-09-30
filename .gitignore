@@ -27,3 +27,4 @@ web/.env
 **/.next/
 **/next-env.d.ts
 **/out/
+packages/db/.env
