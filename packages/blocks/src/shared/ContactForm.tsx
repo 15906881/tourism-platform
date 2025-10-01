@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import { Input, Textarea, Button } from '@weblynk/ui';
 import { clsx } from 'clsx';

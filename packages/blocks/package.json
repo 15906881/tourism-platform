@@ -10,9 +10,29 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./shared": {
+      "types": "./dist/shared/index.d.ts",
+      "default": "./dist/shared/index.js"
+    },
+    "./service-booking": {
+      "types": "./dist/service-booking/index.d.ts",
+      "default": "./dist/service-booking/index.js"
+    },
+    "./hospitality": {
+      "types": "./dist/hospitality/index.d.ts",
+      "default": "./dist/hospitality/index.js"
+    },
+    "./professional": {
+      "types": "./dist/professional/index.d.ts",
+      "default": "./dist/professional/index.js"
+    },
+    "./food": {
+      "types": "./dist/food/index.d.ts",
+      "default": "./dist/food/index.js"
     }
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
@@ -20,14 +40,15 @@
   },
   "peerDependencies": {
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "@weblynk/ui": "^0.0.1"
   },
   "dependencies": {
-    "@weblynk/ui": "workspace:*",
     "clsx": "^2.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "@weblynk/ui": "workspace:*"
   }
 }
