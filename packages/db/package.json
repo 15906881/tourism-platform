@@ -1,5 +1,5 @@
 {
-  "name": "@tourism-platform/db",
+  "name": "@weblynk/db",
   "version": "1.0.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -24,11 +24,14 @@
     "postinstall": "prisma generate"
   },
   "devDependencies": {
+    "@types/node": "^20.19.19",
     "prisma": "^6.16.2",
     "typescript": "^5.3.3"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2"
   },
-  "engines": { "node": ">=18 <21" }
+  "engines": {
+    "node": ">=18 <21"
+  }
 }

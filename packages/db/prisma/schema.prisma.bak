@@ -254,7 +254,6 @@ model tenants {
   sites            sites[]
   tenant_templates tenant_templates[]
   users            users[]
-  subscriptions    subscriptions[]
 
   @@schema("core")
 }

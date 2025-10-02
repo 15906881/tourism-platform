@@ -1,18 +1,34 @@
-import { PrismaClient, Prisma } from '../generated/prisma';
+import { PrismaClient } from '../generated/prisma';
 
-const base = new PrismaClient();
+let _prismaAdmin: PrismaClient | undefined;
 
-/**
- * Run a function inside a transaction with RLS context set for the duration.
- * All Prisma calls inside `fn` MUST use the provided `tx` (TransactionClient).
- */
+export function getPrismaAdmin(): PrismaClient {
+  if (!_prismaAdmin) {
+    _prismaAdmin = new PrismaClient({
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
+      },
+    });
+  }
+  return _prismaAdmin;
+}
+
+// For backwards compatibility - creates client lazily
+export const prismaAdmin = new Proxy({} as PrismaClient, {
+  get(_, prop) {
+    return (getPrismaAdmin() as any)[prop];
+  },
+});
+
 export async function withTenantContext<T>(
   tenantId: string,
-  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  fn: (tx: any) => Promise<T>,
   opts?: { userId?: string }
 ): Promise<T> {
-  return base.$transaction(async (tx) => {
-    // Third arg `true` = LOCAL (ends with the transaction)
+  const client = getPrismaAdmin();
+  return client.$transaction(async (tx) => {
     await tx.$executeRaw`select set_config('app.tenant_id', ${tenantId}, true)`;
     if (opts?.userId) {
       await tx.$executeRaw`select set_config('app.user_id', ${opts.userId}, true)`;
@@ -20,6 +36,3 @@ export async function withTenantContext<T>(
     return fn(tx);
   });
 }
-
-/** Admin/platform client (no tenant scoping). Use sparingly. */
-export const prismaAdmin = base;
