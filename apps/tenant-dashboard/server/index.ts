@@ -1,14 +1,8 @@
 import { router } from './trpc';
-import { tenantRouter } from './routers/tenant';
-import { listingsRouter } from './routers/listings';
-import { leadsRouter } from './routers/leads';
-import { subscriptionsRouter } from './routers/subscriptions';
+import { onboardingRouter } from './routers/onboarding';
 
 export const appRouter = router({
-  tenant: tenantRouter,
-  listings: listingsRouter,
-  leads: leadsRouter,
-  subscriptions: subscriptionsRouter,
+  onboarding: onboardingRouter,
 });
 
 export type AppRouter = typeof appRouter;

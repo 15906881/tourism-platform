@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@weblynk/ui', '@weblynk/blocks', '@weblynk/templates', '@weblynk/db'],
-  eslint: {
-    ignoreDuringBuilds: true,
+  transpilePackages: ['@weblynk/server', '@weblynk/auth', '@weblynk/db'],
+  experimental: {
+    serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
   },
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig
