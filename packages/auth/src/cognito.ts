@@ -1,94 +1,47 @@
-import { JwksClient } from 'jwks-rsa'
-import jwt from 'jsonwebtoken'
-import { z } from 'zod'
+import jwksClient from 'jwks-rsa';
+import jwt from 'jsonwebtoken';
 
-const CognitoPayloadSchema = z.object({
-  sub: z.string(),
-  email: z.string().email(),
-  'cognito:username': z.string().optional(),
-  'custom:tenantId': z.string().optional(),
-  exp: z.number(),
-  iat: z.number(),
-  iss: z.string(),
-  token_use: z.string(),
-})
+const REGION = process.env.COGNITO_REGION || 'us-east-1';
+const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
+const JWKS_URL = process.env.COGNITO_JWKS_URL;
 
-export type CognitoPayload = z.infer<typeof CognitoPayloadSchema>
-
-const COGNITO_JWKS_URL = process.env.COGNITO_JWKS_URL
-const COGNITO_USER_POOL_ID = process.env.COGNITO_USER_POOL_ID
-const COGNITO_REGION = process.env.COGNITO_REGION || 'us-east-1'
-
-let jwksClient: JwksClient | null = null
-
-function getJwksClient(): JwksClient {
-  if (!jwksClient && COGNITO_JWKS_URL) {
-    jwksClient = new JwksClient({
-      jwksUri: COGNITO_JWKS_URL,
-      cache: true,
-      cacheMaxAge: 600000, // 10 minutes
-    })
-  }
-  return jwksClient!
+if (!USER_POOL_ID || !JWKS_URL) {
+  throw new Error('Missing required Cognito environment variables');
 }
 
-function getSigningKey(kid: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    getJwksClient().getSigningKey(kid, (err, key) => {
-      if (err) reject(err)
-      else resolve(key!.getPublicKey())
-    })
-  })
+const client = jwksClient({
+  jwksUri: JWKS_URL,
+  cache: true,
+  cacheMaxAge: 86400000,
+});
+
+function getKey(header: any, callback: any) {
+  client.getSigningKey(header.kid, (err, key) => {
+    if (err) {
+      callback(err);
+      return;
+    }
+    const signingKey = key?.getPublicKey();
+    callback(null, signingKey);
+  });
 }
 
-export async function verifyCognitoToken(token: string): Promise<CognitoPayload> {
-  // Development mode: just decode
-  if (process.env.NODE_ENV === 'development' && !COGNITO_JWKS_URL) {
-    console.warn('⚠️  Development mode: Cognito verification disabled')
-    const decoded = jwt.decode(token)
-    return CognitoPayloadSchema.parse(decoded)
-  }
-
-  // Production mode: full verification
-  if (!COGNITO_JWKS_URL || !COGNITO_USER_POOL_ID) {
-    throw new Error('Missing COGNITO_JWKS_URL or COGNITO_USER_POOL_ID')
-  }
-
-  // Decode header to get kid
-  const decodedHeader = jwt.decode(token, { complete: true })
-  if (!decodedHeader || typeof decodedHeader === 'string') {
-    throw new Error('Invalid token format')
-  }
-
-  const kid = decodedHeader.header.kid
-  if (!kid) {
-    throw new Error('Token missing kid in header')
-  }
-
-  // Get signing key
-  const signingKey = await getSigningKey(kid)
-
-  // Verify token
+export async function verifyCognitoToken(token: string): Promise<any> {
   return new Promise((resolve, reject) => {
     jwt.verify(
       token,
-      signingKey,
+      getKey,
       {
-        issuer: `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${COGNITO_USER_POOL_ID}`,
+        issuer: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
         algorithms: ['RS256'],
       },
       (err, decoded) => {
         if (err) {
-          reject(new Error('Token verification failed: ' + err.message))
-        } else {
-          try {
-            const payload = CognitoPayloadSchema.parse(decoded)
-            resolve(payload)
-          } catch (e) {
-            reject(new Error('Invalid token payload'))
-          }
+          reject(err);
+          return;
         }
+        resolve(decoded);
       }
-    )
-  })
+    );
+  });
 }
