@@ -1,2 +1,2 @@
-export * from '../generated/prisma';
-export { withTenantContext, prismaAdmin } from './client';
+export { PrismaClient, Prisma } from '../generated/prisma/index.js';
+export { withTenantContext, prismaAdmin, getPrismaAdmin } from './client.js';
