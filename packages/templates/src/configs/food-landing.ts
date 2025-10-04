@@ -1,4 +1,4 @@
-import { TemplateConfig } from '../types';
+import type { TemplateConfig } from '../types';
 
 export const foodLanding: TemplateConfig = {
   id: 'food-landing',

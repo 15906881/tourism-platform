@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import React from 'react';
-import { clsx } from 'clsx';
+import React, { useState } from 'react';
+import { cn } from '@weblynk/ui';
 
 export interface GalleryImage {
-  id: string;
-  url: string;
+  src: string;
   alt: string;
+  caption?: string;
 }
 
 export interface GalleryProps {
@@ -16,83 +16,70 @@ export interface GalleryProps {
 }
 
 export function Gallery({ images, columns = 3, className }: GalleryProps) {
-  const [lightboxOpen, setLightboxOpen] = React.useState(false);
-  const [selectedIndex, setSelectedIndex] = React.useState(0);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  const openLightbox = (index: number) => {
-    setSelectedIndex(index);
-    setLightboxOpen(true);
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (selectedIndex === null) return;
+    
+    if (e.key === 'Escape') {
+      setSelectedIndex(null);
+    } else if (e.key === 'ArrowLeft' && selectedIndex > 0) {
+      setSelectedIndex(selectedIndex - 1);
+    } else if (e.key === 'ArrowRight' && selectedIndex < images.length - 1) {
+      setSelectedIndex(selectedIndex + 1);
+    }
   };
-
-  const closeLightbox = () => setLightboxOpen(false);
-
-  const nextImage = () => setSelectedIndex((prev) => (prev + 1) % images.length);
-  const prevImage = () => setSelectedIndex((prev) => (prev - 1 + images.length) % images.length);
 
   React.useEffect(() => {
-    if (lightboxOpen) {
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') closeLightbox();
-        if (e.key === 'ArrowRight') nextImage();
-        if (e.key === 'ArrowLeft') prevImage();
-      };
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('keydown', handleKeyDown as any);
+      return () => document.removeEventListener('keydown', handleKeyDown as any);
     }
-  }, [lightboxOpen]);
+  }, [selectedIndex]);
 
-  const gridCols = {
-    2: 'grid-cols-1 md:grid-cols-2',
-    3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
-    4: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
-  };
+  const selectedImage = selectedIndex !== null ? images[selectedIndex] : undefined;
 
   return (
     <>
-      <div className={clsx('grid gap-4', gridCols[columns], className)}>
+      <div
+        className={cn(
+          'grid gap-md',
+          columns === 2 && 'grid-cols-2',
+          columns === 3 && 'grid-cols-3',
+          columns === 4 && 'grid-cols-4',
+          className
+        )}
+      >
         {images.map((image, index) => (
           <div
-            key={image.id}
-            className="group relative aspect-square overflow-hidden rounded-lg cursor-pointer"
-            onClick={() => openLightbox(index)}
+            key={index}
+            className="relative aspect-square overflow-hidden rounded-md cursor-pointer group"
+            onClick={() => setSelectedIndex(index)}
           >
             <img
-              src={image.url}
+              src={image.src}
               alt={image.alt}
-              className="h-full w-full object-cover transition-transform group-hover:scale-110"
-              loading="lazy"
+              className="w-full h-full object-cover transition-transform group-hover:scale-105"
             />
           </div>
         ))}
       </div>
 
-      {lightboxOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+      {selectedIndex !== null && selectedImage && (
+        <div
+          className="fixed inset-0 bg-bg/95 z-50 flex items-center justify-center p-lg"
+          onClick={() => setSelectedIndex(null)}
+        >
           <button
-            onClick={closeLightbox}
-            className="absolute top-4 right-4 text-white text-4xl hover:opacity-75"
-            aria-label="Close lightbox"
+            className="absolute top-md right-md text-text hover:text-primary"
+            onClick={() => setSelectedIndex(null)}
           >
-            ×
-          </button>
-          <button
-            onClick={prevImage}
-            className="absolute left-4 text-white text-4xl hover:opacity-75"
-            aria-label="Previous image"
-          >
-            ‹
-          </button>
-          <button
-            onClick={nextImage}
-            className="absolute right-4 text-white text-4xl hover:opacity-75"
-            aria-label="Next image"
-          >
-            ›
+            Close
           </button>
           <img
-            src={images[selectedIndex].url}
-            alt={images[selectedIndex].alt}
-            className="max-h-[90vh] max-w-[90vw] object-contain"
+            src={selectedImage.src}
+            alt={selectedImage.alt}
+            className="max-w-full max-h-full object-contain"
           />
         </div>
       )}

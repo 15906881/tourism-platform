@@ -11,10 +11,20 @@
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "lint": "pnpm -r lint"
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "test:e2e": "playwright test tests/e2e",
+    "test:a11y": "playwright test tests/a11y",
+    "test:all": "playwright test",
+    "typecheck": "pnpm -r exec tsc --noEmit"
   },
   "devDependencies": {
-    "turbo": "^2.0.0"
+    "turbo": "^2.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "eslint": "^8.0.0",
+    "@playwright/test": "^1.40.0",
+    "@axe-core/playwright": "^4.8.0"
   },
   "engines": {
     "node": ">=18 <21"

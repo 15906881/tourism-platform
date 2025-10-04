@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { Context } from '../context';
+import type { Context } from '../context';
 
 // Placeholder JWT verify - replace with actual Cognito verification
 async function verifyJWT(token: string) {
