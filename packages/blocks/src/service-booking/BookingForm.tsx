@@ -96,7 +96,7 @@ export function BookingForm({ serviceId, serviceName, onSubmit, className }: Boo
               type="date"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              variant={errors.date ? 'error' : 'default'}
+              error={!!errors.date}
             />
             {errors.date && <p className="text-red-600 text-sm mt-1">{errors.date}</p>}
           </div>
@@ -106,7 +106,7 @@ export function BookingForm({ serviceId, serviceName, onSubmit, className }: Boo
               type="time"
               value={formData.time}
               onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-              variant={errors.time ? 'error' : 'default'}
+              error={!!errors.time}
             />
             {errors.time && <p className="text-red-600 text-sm mt-1">{errors.time}</p>}
           </div>
@@ -118,7 +118,7 @@ export function BookingForm({ serviceId, serviceName, onSubmit, className }: Boo
               placeholder="Number of guests"
               value={formData.guests}
               onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) })}
-              variant={errors.guests ? 'error' : 'default'}
+              error={!!errors.guests}
             />
             {errors.guests && <p className="text-red-600 text-sm mt-1">{errors.guests}</p>}
           </div>
@@ -137,7 +137,7 @@ export function BookingForm({ serviceId, serviceName, onSubmit, className }: Boo
               placeholder="Full Name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              variant={errors.name ? 'error' : 'default'}
+              error={!!errors.name}
             />
             {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name}</p>}
           </div>
@@ -148,7 +148,7 @@ export function BookingForm({ serviceId, serviceName, onSubmit, className }: Boo
               placeholder="Email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              variant={errors.email ? 'error' : 'default'}
+              error={!!errors.email}
             />
             {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
           </div>
@@ -159,7 +159,7 @@ export function BookingForm({ serviceId, serviceName, onSubmit, className }: Boo
               placeholder="Phone"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              variant={errors.phone ? 'error' : 'default'}
+              error={!!errors.phone}
             />
             {errors.phone && <p className="text-red-600 text-sm mt-1">{errors.phone}</p>}
           </div>

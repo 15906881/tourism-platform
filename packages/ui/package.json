@@ -5,22 +5,20 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "sideEffects": ["*.css", "./src/styles/luxury.css"],
-  "files": ["dist", "src/styles/luxury.css", "src/config/tailwind.luxury-preset.js", "THEMES.md"],
+  "sideEffects": ["*.css"],
+  "files": ["dist", "src/styles"],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./styles/luxury.css": "./src/styles/luxury.css",
-    "./tailwind/luxury-preset": "./src/config/tailwind.luxury-preset.js"
+    "./styles/a11y.css": "./src/styles/a11y.css"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
-    "clean": "rimraf dist",
-    "lint": "tsc --noEmit",
-    "prepublishOnly": "npm run build"
+    "clean": "rm -rf dist",
+    "lint": "tsc --noEmit"
   },
   "peerDependencies": {
     "react": "^18.3.1",
@@ -28,6 +26,9 @@
     "tailwindcss": "^3.4.0"
   },
   "dependencies": {
+    "@tanstack/react-table": "^8.0.0",
+    "ag-grid-react": "^31.0.0",
+    "ag-grid-community": "^31.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.263.1"

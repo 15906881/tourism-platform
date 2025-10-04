@@ -67,7 +67,7 @@ export function ContactForm({ submitEndpoint, onSuccess, onError, className }: C
               placeholder="Your Name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              variant={errors.name ? 'error' : 'default'}
+              error={!!errors.name}
             />
             {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name}</p>}
           </div>
@@ -78,7 +78,7 @@ export function ContactForm({ submitEndpoint, onSuccess, onError, className }: C
               placeholder="Your Email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              variant={errors.email ? 'error' : 'default'}
+              error={!!errors.email}
             />
             {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
           </div>
@@ -97,7 +97,7 @@ export function ContactForm({ submitEndpoint, onSuccess, onError, className }: C
               placeholder="Your Message"
               value={formData.message}
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              variant={errors.message ? 'error' : 'default'}
+              error={!!errors.message}
               rows={5}
             />
             {errors.message && <p className="text-red-600 text-sm mt-1">{errors.message}</p>}

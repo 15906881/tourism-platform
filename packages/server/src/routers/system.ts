@@ -1,12 +1,10 @@
-import { router, publicProcedure } from '../trpc'
+import { router, publicProcedure } from '../trpc';
 
 export const systemRouter = router({
-  health: publicProcedure.query(() => ({
-    ok: true,
-    timestamp: new Date().toISOString(),
-  })),
+  health: publicProcedure.query(() => ({ ok: true as const })),
   version: publicProcedure.query(() => ({
-    version: process.env.npm_package_version || '1.0.0',
-    buildTime: process.env.BUILD_TIME || new Date().toISOString(),
+    name: 'tourism-platform',
+    version: process.env.npm_package_version ?? '0.0.0',
+    env: process.env.NODE_ENV ?? 'development',
   })),
-})
+});

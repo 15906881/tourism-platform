@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { TemplateConfig } from '../types';
+import type { TemplateConfig } from '../types';
 
 export interface TemplateRendererProps {
   config: TemplateConfig;
