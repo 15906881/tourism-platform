@@ -18,7 +18,7 @@ export function SignoutButton({ className = '' }: { className?: string }) {
 
   return (
     <button onClick={click} disabled={busy} className={className}>
-      {busy ? 'Signing out…' : 'Sign out'}
+      {busy ? 'Signing out…' : ''}
     </button>
   );
 }
