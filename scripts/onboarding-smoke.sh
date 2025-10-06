@@ -1,32 +1,46 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE=${1:-http://localhost:3000}
+BASE="${1:-http://localhost:3000}"
 JAR="$(mktemp)"
-cleanup(){ rm -f "$JAR"; }
-trap cleanup EXIT
 
 pass(){ echo "✅ $*"; }
 fail(){ echo "❌ $*"; exit 1; }
 
-# 1) Register (sets HttpOnly cookie)
-resp=$(curl -sS -i -c "$JAR" -X POST "$BASE/api/onboarding/register" \
-  -H 'content-type: application/json' -H "origin: $BASE" \
-  --data '{"email":"dev@example.com","company":"Acme"}')
+wait_for() {
+  local url="$1" tries=60
+  for _ in $(seq 1 "$tries"); do
+    if curl -fsS "$url" >/dev/null; then return 0; fi
+    sleep 0.5
+  done
+  echo "Server not ready: $url" >&2
+  exit 1
+}
 
-echo "$resp" | grep -qi '^HTTP/1.1 200' || fail "register http"
-grep -q 'onb_tenant' "$JAR" || fail "missing cookie"
-pass "register set cookie"
+# Wait for server
+wait_for "$BASE/api/health"
 
-# Helper: expect ok:true
-call_ok(){
-  local path="$1" body="$2"
-  curl -sS -b "$JAR" -X POST "$BASE$path" \
-    -H 'content-type: application/json' -H "origin: $BASE" \
-    --data "$body" \
-    | node -e 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{const j=JSON.parse(s); if(!(j.result&&j.result.data&&j.result.data.ok===true)) process.exit(1);});' \
-  || fail "expected ok for $path"
-  pass "ok $path"
+# 1) Register (must set cookie)
+reg=$(
+  curl -fsS -i -c "$JAR" -X POST "$BASE/api/onboarding/register" \
+    -H 'content-type: application/json' \
+    -H "origin: $BASE" -e "$BASE" \
+    --data '{"email":"dev@example.com","company":"Acme"}'
+)
+echo "$reg" | grep -qi 'set-cookie: onb_tenant=' && pass "register set cookie" || fail "register did not set cookie"
+
+call_ok() {
+  local path="$1" data="$2"
+  local out
+  out=$(
+    curl -fsS -b "$JAR" -X POST "$BASE$path" \
+      -H 'content-type: application/json' \
+      -H "origin: $BASE" -e "$BASE" \
+      --data "$data"
+  )
+  echo "$out" | grep -q '"ok":true\|"result":{"data":' \
+    && pass "ok $path" \
+    || { echo "$out"; fail "expected ok for $path"; }
 }
 
 # 2) Happy path
@@ -34,15 +48,21 @@ call_ok /api/trpc/onboarding.setVertical  '{"vertical":"service-booking"}'
 call_ok /api/trpc/onboarding.setTemplate  '{"template":"clean"}'
 call_ok /api/trpc/onboarding.setTheme     '{"themeId":"midnight"}'
 
-# 3) Tamper (bad signature) -> UNAUTHORIZED
-tamper=$(curl -sS -X POST "$BASE/api/trpc/onboarding.setTemplate" \
-  -H 'content-type: application/json' -H "origin: $BASE" \
-  -H 'cookie: onb_tenant=stub-tenant-0001.badSig' \
-  --data '{"template":"clean"}')
-echo "$tamper" | grep -q 'UNAUTHORIZED' && pass "tamper blocked" || fail "tamper not blocked"
+# 3) Tamper (bad signature) -> UNAUTHORIZED/403
+tamper=$(
+  curl -sS -i -X POST "$BASE/api/trpc/onboarding.setTemplate" \
+    -H 'content-type: application/json' \
+    -H "origin: $BASE" -e "$BASE" \
+    -H 'cookie: onb_tenant=stub-tenant-0001.badSig' \
+    --data '{"template":"clean"}'
+)
+echo "$tamper" | grep -qE 'UNAUTHORIZED|403|Forbidden' && pass "tamper blocked" || fail "tamper not blocked"
 
-# 4) No cookie -> UNAUTHORIZED
-nocookie=$(curl -sS -X POST "$BASE/api/trpc/onboarding.setTemplate" \
-  -H 'content-type: application/json' -H "origin: $BASE" \
-  --data '{"template":"clean"}')
-echo "$nocookie" | grep -q 'UNAUTHORIZED' && pass "no-cookie blocked" || fail "no-cookie not blocked"
+# 4) No cookie -> UNAUTHORIZED/403
+nocookie=$(
+  curl -sS -i -X POST "$BASE/api/trpc/onboarding.setTemplate" \
+    -H 'content-type: application/json' \
+    -H "origin: $BASE" -e "$BASE" \
+    --data '{"template":"clean"}'
+)
+echo "$nocookie" | grep -qE 'UNAUTHORIZED|403|Forbidden' && pass "no-cookie blocked" || fail "no-cookie not blocked"

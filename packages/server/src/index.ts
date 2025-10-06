@@ -1,6 +1,7 @@
-export { createContext } from './context';
 export type { Context } from './context';
-export type { AppRouter } from './appRouter';
+export { createContext } from './context';
 
-export { router, publicProcedure, protectedProcedure, membershipProcedure, requireRole } from './trpc';
+export { router, publicProcedure, protectedProcedure } from './trpc';
+
 export { appRouter } from './appRouter';
+export type { AppRouter } from './appRouter';

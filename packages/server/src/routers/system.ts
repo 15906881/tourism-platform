@@ -3,8 +3,7 @@ import { router, publicProcedure } from '../trpc';
 export const systemRouter = router({
   health: publicProcedure.query(() => ({ ok: true as const })),
   version: publicProcedure.query(() => ({
-    name: 'tourism-platform',
-    version: process.env.npm_package_version ?? '0.0.0',
+    name: 'tenant-dashboard',
     env: process.env.NODE_ENV ?? 'development',
   })),
 });

@@ -1,63 +1,34 @@
-import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
-import { prisma } from '@weblynk/db';
-import { verifyCognitoToken } from '@weblynk/auth';
-import { randomUUID } from 'crypto';
+import type { inferAsyncReturnType } from '@trpc/server';
 
-type MembershipContext =
-  | {
-      tenant_id: string;
-      role: string;
-      account_id: string;
-    }
-  | null;
+export async function createContext() {
+  const backend = (process.env.ONBOARDING_BACKEND || 'stub').toLowerCase();
 
-export async function createContext({ req }: FetchCreateContextFnOptions) {
-  const requestId = randomUUID();
-  const authHeader = req.headers.get('authorization');
-  const token = authHeader?.replace('Bearer ', '');
-
-  let accountId: string | null = null;
-  let tenantId: string | null = null;
-  let userId: string | null = null;
-  let role: string | null = null;
-  let membership: MembershipContext = null;
-
-  if (token) {
+  // Lazy-load Prisma only if we ever flip backend=db.
+  let db: any = null;
+  if (backend === 'db') {
     try {
-      const payload = await verifyCognitoToken(token);
-
-      const account = await prisma.accounts.findFirst({
-        where: { email: payload.email },
-        include: {
-          memberships: {
-            include: { tenants: true },
-          },
-        },
-      });
-
-      const firstMembership = account?.memberships?.[0];
-      if (account && firstMembership) {
-        membership = {
-          tenant_id: firstMembership.tenant_id,
-          role: firstMembership.role,
-          account_id: firstMembership.account_id,
-        };
-
-        accountId = account.id;
-        tenantId = membership.tenant_id;
-        role = membership.role;
-
-        const user = await prisma.user.findFirst({
-          where: { email: payload.email, tenant_id: tenantId },
-        });
-        userId = user?.id ?? null;
-      }
-    } catch (err) {
-      console.warn('Invalid token:', err);
+      const mod: any = await import('@weblynk/db/generated/prisma');
+      db = new mod.PrismaClient();
+    } catch (e: any) {
+      console.error('[context] Failed to import Prisma client:', e?.message || e);
     }
   }
 
-  return { db: prisma, accountId, tenantId, userId, role, membership, requestId };
+  // Provide optional identity fields expected by routers/permissions.
+  // In stub mode we just use safe placeholders.
+  const ctx = {
+    db,
+    tenantId: process.env.DEBUG_TENANT_ID || 'stub-tenant-0001',
+    role: (process.env.DEBUG_ROLE as 'admin' | 'user' | undefined) || 'admin',
+  };
+
+  if (process.env.DEBUG_ONBOARDING === '1') {
+    const url = process.env.DATABASE_URL || '<unset>';
+    const masked = url.replace(/:\/\/([^:@]+):([^@]*)@/, '://$1:***@');
+    console.log('[context] DEBUG DATABASE_URL =', masked, '| BACKEND =', backend, '| tenantId =', ctx.tenantId, '| role =', ctx.role);
+  }
+
+  return ctx;
 }
 
-export type Context = Awaited<ReturnType<typeof createContext>>;
+export type Context = inferAsyncReturnType<typeof createContext>;

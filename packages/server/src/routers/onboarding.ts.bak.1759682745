@@ -1,0 +1,43 @@
+import { z } from 'zod';
+import { randomUUID } from 'crypto';
+import { publicProcedure, createTRPCRouter } from '../trpc';
+
+const backend = (process.env.ONBOARDING_BACKEND || 'stub').toLowerCase();
+
+if (process.env.DEBUG_ONBOARDING === '1') {
+  const url = process.env.DATABASE_URL || '<unset>';
+  const masked = url.replace(/:\/\/([^:@]+):([^@]*)@/, '://$1:***@');
+  console.log('[onboarding] DEBUG DATABASE_URL =', masked);
+  console.log('[onboarding] BACKEND =', backend);
+}
+
+const stubTenant = () => `t_${randomUUID().slice(0, 8)}`;
+const pickTenant = (inTid?: string, ctxTid?: string) => inTid || ctxTid || 'stub-tenant-0001';
+
+export const onboardingRouter = createTRPCRouter({
+  registerDev: publicProcedure
+    .input(z.object({ email: z.string().email(), company: z.string().min(1) }))
+    .mutation(async ({ input }) => {
+      if (backend !== 'stub') throw new Error('Non-stub backend not enabled');
+      console.log('[onboarding:stub] registerDev ->', input.email);
+      return { tenantId: stubTenant() };
+    }),
+
+  setVertical: publicProcedure
+    .input(z.object({ vertical: z.string() }).strict())
+    .mutation(async ({ input, ctx }) => {
+      if (backend !== 'stub') throw new Error('Non-stub backend not enabled');
+      const tenantId = (ctx as any).tenantId ?? stubTenant();
+      console.log('[onboarding:stub] setVertical ->', { tenantId, vertical: input.vertical });
+      return { ok: true, tenantId };
+    }),
+
+  setTemplate: publicProcedure
+    .input(z.object({ template: z.string() }).strict())
+    .mutation(async ({ input, ctx }) => {
+      if (backend !== 'stub') throw new Error('Non-stub backend not enabled');
+      const tenantId = (ctx as any).tenantId ?? stubTenant();
+      console.log('[onboarding:stub] setTemplate ->', { tenantId, template: input.template });
+      return { ok: true, tenantId };
+    }),
+});

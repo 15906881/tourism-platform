@@ -16,17 +16,22 @@
     "test:e2e": "playwright test tests/e2e",
     "test:a11y": "playwright test tests/a11y",
     "test:all": "playwright test",
-    "typecheck": "pnpm -r exec tsc --noEmit"
+    "typecheck": "pnpm -r exec tsc --noEmit",
+    "smoke:onboarding": "bash scripts/onboarding-smoke.sh http://localhost:3000"
   },
   "devDependencies": {
-    "turbo": "^2.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "eslint": "^8.0.0",
+    "@axe-core/playwright": "^4.8.0",
     "@playwright/test": "^1.40.0",
-    "@axe-core/playwright": "^4.8.0"
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=18 <21"
+  },
+  "dependencies": {
+    "@trpc/client": "^10.45.2"
   }
 }
