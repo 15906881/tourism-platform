@@ -1,0 +1,17 @@
+import { prisma } from '@weblynk/db';
+import { randomUUID } from 'crypto';
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+
+export async function createContext(_opts: FetchCreateContextFnOptions) {
+  return {
+    db: prisma,
+    accountId: null as string | null,
+    tenantId: null as string | null,
+    userId: null as string | null,
+    role: null as string | null,
+    membership: null as { tenant_id: string; role: string } | null,
+    requestId: randomUUID(),
+  };
+}
+
+export type Context = Awaited<ReturnType<typeof createContext>>;

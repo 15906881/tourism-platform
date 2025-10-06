@@ -1,35 +1,62 @@
 'use client';
+
+import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { trpcCall } from '@/lib/trpcFetch';
+import { trpcCall } from '@/lib/trpcCall';
 
-const VERTICALS = ['service-booking','hospitality','professional','food'] as const;
+const THEMES = ['midnight', 'sunrise', 'ocean', 'forest'] as const;
+type ThemeId = (typeof THEMES)[number];
 
-export default function ChooseVertical() {
+export default function ChooseTheme() {
   const r = useRouter();
-  const [selected, setSelected] = useState<string>('');
+  const [selected, setSelected] = React.useState<ThemeId>('midnight');
+  const [loading, setLoading] = React.useState(false);
 
-  async function onNext() {
-    const tenantId = (document.cookie.split('; ').find(c=>c.startsWith('onb_tenant='))||'').split('=').pop();
-    if (!tenantId) return alert('Missing onboarding session');
-    await trpcCall('onboarding.setVertical', { tenantId, vertical: selected });
-    r.push('/onboarding/choose-template');
-  }
+  const onChangeTheme = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelected(e.currentTarget.value as ThemeId);
+  };
+
+  const onNext = async () => {
+    setLoading(true);
+    try {
+      await trpcCall('onboarding.setTheme', { themeId: selected });
+      r.push('/onboarding/business-info');
+    } catch (err: unknown) {
+      if (err instanceof Error) console.error(err);
+      else console.error('Unknown error', err);
+      alert('Failed to save theme');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Choose your vertical</h1>
-      <div className="grid grid-cols-2 gap-3">
-        {VERTICALS.map(v=>(
-          <button key={v} onClick={()=>setSelected(v)}
-            className={'border p-4 rounded ' + (selected===v?'border-blue-600':'border-gray-300')}>
-            {v}
-          </button>
+    <main className="p-6 space-y-6">
+      <h1 className="text-xl font-semibold">Pick a theme</h1>
+
+      <fieldset className="space-y-2">
+        <legend className="sr-only">Theme</legend>
+        {THEMES.map((id) => (
+          <label key={id} className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="theme"
+              value={id}
+              checked={selected === id}
+              onChange={onChangeTheme}
+            />
+            <span className="capitalize">{id}</span>
+          </label>
         ))}
-      </div>
-      <div className="flex justify-end">
-        <button disabled={!selected} onClick={onNext} className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50">Continue</button>
-      </div>
-    </div>
+      </fieldset>
+
+      <button
+        onClick={onNext}
+        disabled={loading}
+        className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
+      >
+        {loading ? 'Saving…' : 'Next'}
+      </button>
+    </main>
   );
 }
