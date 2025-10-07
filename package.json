@@ -17,7 +17,8 @@
     "test:a11y": "playwright test tests/a11y",
     "test:all": "playwright test",
     "typecheck": "pnpm -r exec tsc --noEmit",
-    "smoke:onboarding": "bash scripts/onboarding-smoke.sh http://localhost:3000"
+    "smoke:onboarding": "bash scripts/onboarding-smoke.sh http://localhost:3000",
+    "smoke:onboarding:ci": "scripts/smoke-ci.sh"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.8.0",
@@ -26,7 +27,8 @@
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.0.0",
     "turbo": "^2.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wait-on": "^9.0.1"
   },
   "engines": {
     "node": ">=18 <21"
