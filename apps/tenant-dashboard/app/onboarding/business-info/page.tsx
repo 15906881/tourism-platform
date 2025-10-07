@@ -1,49 +1,106 @@
 'use client';
 
+import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { trpcCall } from '@/lib/trpcCall';
 
-export default function BusinessInfo() {
+type Form = {
+  legalName: string;
+  phone: string;
+  country: string;
+};
+
+export default function BusinessInfoPage() {
   const r = useRouter();
-  const [firstName, setFirstName] = useState('');
-  const [lastName,  setLastName]  = useState('');
-  const [loading,   setLoading]   = useState(false);
+  const [form, setForm] = React.useState<Form>({ legalName: '', phone: '', country: '' });
+  const [saving, setSaving] = React.useState(false);
 
-  async function onNext() {
-    setLoading(true);
+  const setField =
+    (key: keyof Form) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      let value = e.currentTarget.value;
+      if (key === 'country') value = value.toUpperCase();
+      setForm((f) => ({ ...f, [key]: value }));
+    };
+
+  // Require legalName and 2-letter country; phone optional
+  const isValid = form.legalName.trim().length > 0 && /^[A-Z]{2}$/.test(form.country.trim());
+
+  const onSave = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!isValid || saving) return;
+
+    setSaving(true);
     try {
-      // (Optional): later we can persist to a stub endpoint.
-      // For now, just advance.
+      await trpcCall('onboarding.setBusinessInfo', {
+        legalName: form.legalName.trim(),
+        phone: form.phone.trim(),
+        country: form.country.trim().toUpperCase(),
+      });
       r.push('/onboarding/payment');
+    } catch (err: unknown) {
+      if (err instanceof Error) console.error(err);
+      else console.error('Unknown error', err);
+      alert('Failed to save business info');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
-  }
+  };
 
   return (
-    <main className="p-8 space-y-4">
-      <h1 className="text-5xl font-bold mb-6">Business info</h1>
-      <div className="space-x-2">
-        <input
-          className="border p-2"
-          placeholder="First name"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-        />
-        <input
-          className="border p-2"
-          placeholder="Last name"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-        />
-      </div>
-      <button
-        onClick={onNext}
-        disabled={loading}
-        className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
-      >
-        {loading ? 'Continuing…' : 'Continue'}
-      </button>
+    <main className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold">Business info</h1>
+
+      <form onSubmit={onSave} className="grid gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-2 sm:col-span-2">
+          <span className="text-sm">Legal name</span>
+          <input
+            name="legalName"
+            autoComplete="organization"
+            className="border rounded px-3 py-2"
+            value={form.legalName}
+            onChange={setField('legalName')}
+            placeholder="Acme Inc"
+            required
+          />
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-sm">Phone</span>
+          <input
+            name="phone"
+            type="tel"
+            autoComplete="tel"
+            className="border rounded px-3 py-2"
+            value={form.phone}
+            onChange={setField('phone')}
+            placeholder="+1 555 444 3456"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-sm">Country</span>
+          <input
+            name="country"
+            className="border rounded px-3 py-2 uppercase"
+            value={form.country}
+            onChange={setField('country')}
+            placeholder="US"
+            maxLength={2}
+            required
+          />
+        </label>
+
+        <div className="sm:col-span-2">
+          <button
+            type="submit"
+            disabled={!isValid || saving}
+            className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : 'Save & continue'}
+          </button>
+        </div>
+      </form>
     </main>
   );
 }

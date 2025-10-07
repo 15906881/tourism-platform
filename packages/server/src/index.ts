@@ -1,7 +1,17 @@
-export type { Context } from './context';
-export { createContext } from './context';
+// packages/server/src/index.ts
+export * from "./context";
+export { router, publicProcedure } from "./trpc";
 
-export { router, publicProcedure, protectedProcedure } from './trpc';
+// Routers
+import { router } from "./trpc";
+import { onboardingRouter } from "./routers/onboarding";
+import { systemRouter } from "./routers/system";
+import { leadsRouter } from "./routers/leads"; // Add this since it exists
 
-export { appRouter } from './appRouter';
-export type { AppRouter } from './appRouter';
+export const appRouter = router({
+  system: systemRouter,
+  onboarding: onboardingRouter,
+  leads: leadsRouter, // Add this
+});
+
+export type AppRouter = typeof appRouter;

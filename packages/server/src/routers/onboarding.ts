@@ -2,7 +2,8 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, publicProcedure } from "../trpc";
 
-const mask = (id: string) => (id && id.length >= 4 ? `${id.slice(0, 4)}…${id.slice(-4)}` : "(none)");
+const mask = (id: string) =>
+  id && id.length >= 4 ? `${id.slice(0, 4)}...${id.slice(-4)}` : "(none)";
 
 function requireTenant(ctx: { tenantId?: string | null }) {
   if (!ctx.tenantId) {
@@ -11,17 +12,14 @@ function requireTenant(ctx: { tenantId?: string | null }) {
   return ctx.tenantId as string;
 }
 
-// Local-dev helper ONLY used by registerDev to mint a fake tenant id
 function stubTenant() {
   return "stub-tenant-0001";
 }
 
 export const onboardingRouter = router({
-  // Step 1: dev registration bootstraps the onboarding cookie
   registerDev: publicProcedure
     .input(z.object({ email: z.string().email(), company: z.string().min(1) }).strict())
     .mutation(({ input }) => {
-      // In a real backend, create tenant + user here and return its ID.
       const tenantId = stubTenant();
       console.log("[onboarding:stub] registerDev ->", {
         email: input.email,
@@ -31,7 +29,6 @@ export const onboardingRouter = router({
       return { tenantId };
     }),
 
-  // Step 2+ must have tenant (gate)
   setVertical: publicProcedure
     .input(z.object({ vertical: z.string() }).strict())
     .mutation(({ ctx, input }) => {
@@ -61,6 +58,31 @@ export const onboardingRouter = router({
       console.log("[onboarding:stub] setTheme ->", {
         tenantId: mask(tenantId),
         themeId: input.themeId,
+      });
+      return { ok: true, tenantId };
+    }),
+
+  // ✅ New: accept and log business info (very permissive; tighten later)
+  setBusinessInfo: publicProcedure
+    .input(
+      z
+        .object({
+          legalName: z.string().min(1),
+          phone: z.string().min(1),
+          country: z.string().min(2).max(2),
+        })
+        .strict()
+    )
+    .mutation(({ ctx, input }) => {
+      const tenantId = requireTenant(ctx);
+      const data = {
+        legalName: input.legalName.trim(),
+        phone: input.phone.trim(),
+        country: input.country.trim().toUpperCase(),
+      };
+      console.log("[onboarding:stub] setBusinessInfo ->", {
+        tenantId: mask(tenantId),
+        ...data,
       });
       return { ok: true, tenantId };
     }),

@@ -1,36 +1,47 @@
 import { NextResponse } from 'next/server';
-import { appRouter, createContext } from '@weblynk/server';
-import { ONB_COOKIE, ONB_COOKIE_MAX_AGE, signTenantId } from '@/lib/tenantCookie';
+import { appRouter } from '@weblynk/server';
+import {
+  ONB_COOKIE,
+  ONB_COOKIE_MAX_AGE,
+  signTenantId,
+} from '@/lib/tenantCookie';
+import { limiter } from '@/lib/rateLimit';
+
+function clientKey(req: Request) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'local';
+  const ua = req.headers.get('user-agent') ?? 'unknown';
+  return `register:${ip}:${ua.slice(0, 20)}`;
+}
 
 export async function POST(req: Request) {
-  const { email, company } = await req.json();
-
-  // Call tRPC to create the dev/tenant (stubbed in your server)
-  const ctx = await createContext();
-  const caller = appRouter.createCaller(ctx);
-  const out = await caller.onboarding.registerDev({ email, company });
-
-  const tenantId = out?.tenantId;
-  if (!tenantId) {
-    return NextResponse.json(
-      { ok: false, error: 'registerDev returned no tenantId' },
-      { status: 400 }
-    );
+  // Best-effort rate limit (no-op in dev if limiter is permissive)
+  try {
+    if (!limiter.take(clientKey(req))) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+  } catch {
+    /* ignore limiter failures in dev */
   }
 
-  // Sign the tenant id and set the cookie
-  const cookieVal = signTenantId(tenantId);
-  const host = req.headers.get('host') ?? '';
-  const isLocal = host.startsWith('localhost') || host.startsWith('127.0.0.1');
+  const { email, company } = await req.json();
 
+  // Reuse your tRPC logic
+  const caller = appRouter.createCaller({
+    db: undefined as any,
+    tenantId: 'public',
+    role: 'admin',
+  });
+  const { tenantId } = await caller.onboarding.registerDev({ email, company });
+
+  // Sign + set HttpOnly cookie
+  const signed = await signTenantId(tenantId);
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(ONB_COOKIE, cookieVal, {
+  res.cookies.set(ONB_COOKIE, signed, {
     httpOnly: true,
-    secure: !isLocal,      // Secure=false for localhost so cookies stick
     sameSite: 'lax',
     path: '/',
     maxAge: ONB_COOKIE_MAX_AGE,
+    secure: process.env.NODE_ENV === 'production',
   });
-
   return res;
 }
