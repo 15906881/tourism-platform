@@ -29,89 +29,39 @@ const tokens = {
   }
 };
 
-// Generate CSS
+// Generate CSS without template literals
 let css = ':root {\n';
 Object.entries(tokens.colors).forEach(([key, value]) => {
   if (typeof value === 'object') {
     Object.entries(value).forEach(([subkey, subval]) => {
-      const varName = subkey === 'DEFAULT' ? key : `${key}-${subkey}`;
-      css += `  --color-${varName}: ${subval};\n`;
+      const varName = subkey === 'DEFAULT' ? '--color-' + key : '--color-' + key + '-' + subkey;
+      css += '  ' + varName + ': ' + subval + ';\n';
     });
   } else {
-    css += `  --color-${key}: ${value};\n`;
+    css += '  --color-' + key + ': ' + value + ';\n';
   }
 });
 
 Object.entries(tokens.spacing).forEach(([key, value]) => {
-  css += `  --space-${key}: ${value};\n`;
+  css += '  --space-' + key + ': ' + value + ';\n';
 });
 
 Object.entries(tokens.radius).forEach(([key, value]) => {
-  css += `  --radius-${key}: ${value};\n`;
+  css += '  --radius-' + key + ': ' + value + ';\n';
 });
 
 Object.entries(tokens.shadows).forEach(([key, value]) => {
-  css += `  --shadow-${key}: ${value};\n`;
+  css += '  --shadow-' + key + ': ' + value + ';\n';
 });
 css += '}\n';
-
-// Generate Tailwind preset
-const tailwindPreset = `module.exports = ${JSON.stringify({
-  theme: {
-    extend: {
-      colors: {
-        bg: 'var(--color-bg)',
-        surface: {
-          DEFAULT: 'var(--color-surface-1)',
-          2: 'var(--color-surface-2)',
-          3: 'var(--color-surface-3)'
-        },
-        text: {
-          DEFAULT: 'var(--color-text)',
-          muted: 'var(--color-text-muted)',
-          subtle: 'var(--color-text-subtle)'
-        },
-        primary: {
-          DEFAULT: 'var(--color-primary)',
-          hover: 'var(--color-primary-hover)'
-        },
-        border: {
-          DEFAULT: 'var(--color-border)',
-          focus: 'var(--color-border-focus)'
-        }
-      },
-      spacing: {
-        xs: 'var(--space-xs)',
-        sm: 'var(--space-sm)',
-        md: 'var(--space-md)',
-        lg: 'var(--space-lg)',
-        xl: 'var(--space-xl)',
-        '2xl': 'var(--space-2xl)',
-        '3xl': 'var(--space-3xl)'
-      },
-      borderRadius: {
-        xs: 'var(--radius-xs)',
-        sm: 'var(--radius-sm)',
-        md: 'var(--radius-md)',
-        lg: 'var(--radius-lg)',
-        xl: 'var(--radius-xl)'
-      },
-      boxShadow: {
-        sm: 'var(--shadow-sm)',
-        md: 'var(--shadow-md)',
-        lg: 'var(--shadow-lg)',
-        glow: 'var(--shadow-glow)'
-      }
-    }
-  }
-}, null, 2)};\n`;
 
 // Write outputs
 fs.mkdirSync(path.join(__dirname, '../dist'), { recursive: true });
 fs.writeFileSync(path.join(__dirname, '../dist/tokens.css'), css);
-fs.writeFileSync(path.join(__dirname, '../dist/tailwind-preset.js'), tailwindPreset);
+
+// Also create index files
 fs.writeFileSync(path.join(__dirname, '../dist/index.js'), 
-  `export const tokens = ${JSON.stringify(tokens, null, 2)};\n`);
+  'module.exports = ' + JSON.stringify(tokens, null, 2) + ';\n');
 fs.writeFileSync(path.join(__dirname, '../dist/index.d.ts'),
   'export declare const tokens: any;\n');
 
