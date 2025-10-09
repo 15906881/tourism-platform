@@ -1,27 +1,48 @@
-export const runtime = "nodejs";
-import { NextResponse } from "next/server";
 import { PrismaClient } from "@weblynk/db/generated/prisma";
-
-const prisma = new PrismaClient();
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const rows = await prisma.$queryRaw<
-      { db: string; usr: string; sch: string; sp: string }[]
-    >`SELECT current_database() AS db, current_user AS usr, current_schema() AS sch, current_setting('search_path') AS sp;`;
-    const row = rows[0];
+    const prisma = new PrismaClient();
+    
+    const result = await prisma.$queryRaw`
+      SELECT 
+        current_database(),
+        current_user,
+        current_schema(),
+        current_setting('search_path') as search_path
+    `;
+    
+    const row = Array.isArray(result) ? result[0] : result;
+    
+    if (!row) {
+      return NextResponse.json({ 
+        ok: false, 
+        error: "No database connection result" 
+      }, { status: 500 });
+    }
+
+    const db = row.current_database;
+    const user = row.current_user;
+    const schema = row.current_schema;
+    const searchPath = row.search_path;
+    
+    await prisma.$disconnect();
 
     return NextResponse.json({
       ok: true,
-      db: row.db,
-      user: row.usr,
-      schema: row.sch,
-      search_path: row.sp,
-      url_has_schema_core: !!(process.env.DATABASE_URL || '').includes('schema=core')
+      db: db || null,
+      user: user || null,
+      schema: schema || null,
+      search_path: searchPath || null,
+      url_has_schema_core: false
     });
-  } catch (e:any) {
-    return NextResponse.json({ ok:false, error: e?.message ?? String(e) }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
+
+  } catch (error: any) {
+    console.error("Database health check failed:", error);
+    return NextResponse.json({
+      ok: false,
+      error: error.message
+    }, { status: 500 });
   }
 }

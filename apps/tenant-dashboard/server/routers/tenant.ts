@@ -4,7 +4,7 @@ export const tenantRouter = router({
   getCurrent: protectedProcedure.query(async ({ ctx }) => {
     // protectedProcedure guarantees tenantId; fall back to null just in case
     if (!ctx.tenantId) return null;
-    return ctx.db.tenant.findUnique({
+    return ctx.db.tenants.findUnique({
       where: { id: ctx.tenantId },
     });
   }),
