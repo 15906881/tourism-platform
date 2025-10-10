@@ -1,6 +1,7 @@
 {
   "name": "tourism-platform",
   "version": "1.0.0",
+  "packageManager": "pnpm@10.17.1",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
