@@ -1,0 +1,20 @@
+{
+  "name": "@weblynk/tokens",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./css": "./dist/tokens.css",
+    "./tailwind": "./dist/tailwind-preset.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "node scripts/build-tokens.js",
+    "dev": "node scripts/build-tokens.js --watch"
+  }
+}
