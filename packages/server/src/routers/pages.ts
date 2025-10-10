@@ -23,7 +23,7 @@ export const pagesRouter = router({
   update: protectedProcedure
     .input(z.object({
       id: z.string(),
-      overrides: z.record(z.any()).optional(),
+      overrides: z.record(z.string(), z.any()).optional(),
       published: z.boolean().optional(),
     }))
     .mutation(async ({ input, ctx }) => {

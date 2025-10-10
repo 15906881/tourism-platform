@@ -68,7 +68,7 @@ export function ReservationWidget({ availableTimes, onSubmit, className }: Reser
               type="date"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              variant={errors.date ? 'error' : 'default'}
+              error={!!errors.date}
             />
             {errors.date && <p className="text-red-600 text-sm mt-1">{errors.date}</p>}
           </div>
@@ -77,7 +77,7 @@ export function ReservationWidget({ availableTimes, onSubmit, className }: Reser
             <Select
               value={formData.time}
               onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-              variant={errors.time ? 'error' : 'default'}
+              error={!!errors.time}
             >
               <option value="">Select time</option>
               {availableTimes.map((time) => (
@@ -108,7 +108,7 @@ export function ReservationWidget({ availableTimes, onSubmit, className }: Reser
             placeholder="Full Name"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            variant={errors.name ? 'error' : 'default'}
+            error={!!errors.name}
           />
           {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name}</p>}
         </div>
@@ -119,7 +119,7 @@ export function ReservationWidget({ availableTimes, onSubmit, className }: Reser
             placeholder="Email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            variant={errors.email ? 'error' : 'default'}
+            error={!!errors.email}
           />
           {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
         </div>
@@ -130,7 +130,7 @@ export function ReservationWidget({ availableTimes, onSubmit, className }: Reser
             placeholder="Phone"
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            variant={errors.phone ? 'error' : 'default'}
+            error={!!errors.phone}
           />
           {errors.phone && <p className="text-red-600 text-sm mt-1">{errors.phone}</p>}
         </div>

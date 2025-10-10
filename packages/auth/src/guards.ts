@@ -1,4 +1,4 @@
-import { TokenPayload } from './token'
+import type { TokenPayload } from './token';
 
 export enum Role {
   ADMIN = 'ADMIN',
@@ -8,13 +8,13 @@ export enum Role {
 }
 
 export function hasRole(payload: TokenPayload, role: Role): boolean {
-  return payload.roles.includes(role)
+  return payload.roles.includes(role);
 }
 
 export function hasAnyRole(payload: TokenPayload, roles: Role[]): boolean {
-  return roles.some(role => payload.roles.includes(role))
+  return roles.some(role => payload.roles.includes(role));
 }
 
 export function isAdmin(payload: TokenPayload): boolean {
-  return hasRole(payload, Role.ADMIN)
+  return hasRole(payload, Role.ADMIN);
 }

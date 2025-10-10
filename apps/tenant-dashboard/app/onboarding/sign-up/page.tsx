@@ -2,60 +2,52 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { trpcCall } from '@/lib/trpcFetch';
 
 export default function SignUp() {
-  const r = useRouter();
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
   const [loading, setLoading] = useState(false);
+  const r = useRouter();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (loading) return;
     setLoading(true);
     try {
-      // call onboarding.registerDev -> { tenantId: string }
-      const res = await trpcCall<{ email: string; company: string }, { tenantId: string }>(
-        'onboarding.registerDev',
-        { email, company }
-      );
-
-      // store onboarding session cookie for later steps
-      document.cookie = `onb_tenant=${res.tenantId}; Path=/; Max-Age=86400`;
-
-      // go to vertical selection
+      const resp = await fetch('/api/onboarding/register', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, company }),
+      });
+      const json = await resp.json();
+      if (!resp.ok || !json?.ok) throw new Error(json?.error || 'Registration failed');
       r.push('/onboarding/choose-vertical');
-    } catch (err: any) {
-      alert(err?.message || 'Failed to create account');
+    } catch (err) {
+      console.error(err);
+      alert('Sign-up failed. Please try again.');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="max-w-xl space-y-4">
-      <h1 className="text-4xl font-bold mb-6">Create your account</h1>
+    <form onSubmit={onSubmit} className="space-y-4">
       <input
-        className="border p-2 w-full"
-        placeholder="you@company.com"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
         type="email"
         required
+        placeholder="work email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        className="border p-2 rounded w-full"
       />
       <input
-        className="border p-2 w-full"
-        placeholder="Company name"
+        type="text"
+        required
+        placeholder="company"
         value={company}
         onChange={e => setCompany(e.target.value)}
-        required
+        className="border p-2 rounded w-full"
       />
-      <button
-        type="submit"
-        disabled={loading}
-        className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-      >
+      <button disabled={loading} className="px-4 py-2 rounded bg-black text-white disabled:opacity-50">
         {loading ? 'Creating…' : 'Create account'}
       </button>
     </form>

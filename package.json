@@ -2,21 +2,31 @@
   "name": "tourism-platform",
   "version": "1.0.0",
   "private": true,
-  "packageManager": "pnpm@10.17.1",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
-    "dev": "pnpm -r dev",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "lint": "pnpm -r lint"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "type-check": "pnpm -r --filter \"./apps/**\" exec tsc --noEmit",
+    "test:e2e": "playwright test tests/e2e",
+    "test:a11y": "playwright test tests/a11y"
+  },
+  "dependencies": {
+    "@trpc/client": "^10.45.2"
   },
   "devDependencies": {
-    "turbo": "^2.0.0"
+    "@axe-core/playwright": "^4.8.0",
+    "@playwright/test": "^1.40.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.9.3",
+    "wait-on": "^9.0.1"
   },
   "engines": {
-    "node": ">=18 <21"
-  }
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@10.17.1"
 }

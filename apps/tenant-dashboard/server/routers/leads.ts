@@ -4,40 +4,38 @@ import { z } from 'zod';
 export const leadsRouter = router({
   list: protectedProcedure
     .input(z.object({
-      take: z.number().min(1).max(100).default(20),
-      skip: z.number().min(0).default(0),
+      take: z.number().int().positive().max(100).optional(),
+      skip: z.number().int().nonnegative().optional(),
     }).optional())
     .query(async ({ ctx, input }) => {
-      return await ctx.runAsTenant((tx) =>
-        tx.leads.findMany({
-          take: input?.take || 20,
-          skip: input?.skip || 0,
-          orderBy: { created_at: 'desc' },
-        })
-      );
+      // Filter by the tenant relation (your error mentioned the field is `tenants`)
+      return ctx.db.leads.findMany({
+        where: { tenants: { id: ctx.tenantId! } },
+        take: input?.take ?? 20,
+        skip: input?.skip ?? 0,
+        orderBy: { created_at: 'desc' },
+      });
     }),
 
-  // Public endpoint - no auth required
-  createPublic: publicProcedure
+  create: publicProcedure
     .input(z.object({
-      name: z.string().min(1).max(255),
+      name: z.string().min(1),
       email: z.string().email(),
-      phone: z.string().optional(),
-      message: z.string().max(2000),
+      phone: z.string().optional().nullable(),
+      message: z.string().min(1),
+      source: z.string().default('web'),
     }))
     .mutation(async ({ ctx, input }) => {
-      // TODO: Add rate limiting with Redis
-      // TODO: Add captcha verification
-      return await ctx.runAsTenant((tx) =>
-        tx.leads.create({
-          data: {
-            name: input.name,
-            email: input.email,
-            phone: input.phone,
-            message: input.message,
-            source: 'contact_form',
-          },
-        })
-      );
+      // IMPORTANT: connect the required tenant relation
+      return ctx.db.leads.create({
+        data: {
+          tenants: { connect: { id: ctx.tenantId! } },
+          name: input.name,
+          email: input.email,
+          phone: input.phone ?? null,
+          message: input.message,
+          source: input.source,
+        },
+      });
     }),
 });

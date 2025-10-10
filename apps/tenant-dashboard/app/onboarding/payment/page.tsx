@@ -6,12 +6,10 @@ import { trpcCall } from '@/lib/trpcFetch';
 export default function Payment() {
   const r = useRouter(); const [slug, setSlug] = useState('');
   async function onStartTrial() {
-    const tenantId = (document.cookie.split('; ').find(c=>c.startsWith('onb_tenant='))||'').split('=').pop();
-    if (!tenantId) return alert('Missing onboarding session');
-    await trpcCall('onboarding.startTrial', { tenantId, planId: 'starter' });
-    const fin = await trpcCall<{tenantId:string;slug:string},{ok:boolean;siteUrl:string}>(
+    await trpcCall('onboarding.startTrial', { planId: 'starter' });
+    const fin: { ok: boolean; siteUrl?: string } = await trpcCall(
       'onboarding.finalize',
-      { tenantId, slug }
+      { slug }
     );
     if (fin.ok) r.push('/dashboard');
   }

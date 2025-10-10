@@ -1,22 +1,17 @@
-import { router } from './trpc'
-import { systemRouter } from './routers/system'
-import { tenantsRouter } from './routers/tenants'
-import { listingsRouter } from './routers/listings'
-import { leadsRouter } from './routers/leads'
-import { mediaRouter } from './routers/media'
-import { sitesRouter } from './routers/sites'
-import { pagesRouter } from './routers/pages'
+// packages/server/src/index.ts
+export * from "./context";
+export { router, publicProcedure } from "./trpc";
+
+// Routers
+import { router } from "./trpc";
+import { onboardingRouter } from "./routers/onboarding";
+import { systemRouter } from "./routers/system";
+import { leadsRouter } from "./routers/leads"; // Add this since it exists
 
 export const appRouter = router({
   system: systemRouter,
-  tenants: tenantsRouter,
-  listings: listingsRouter,
-  leads: leadsRouter,
-  media: mediaRouter,
-  sites: sitesRouter,
-  pages: pagesRouter,
-})
+  onboarding: onboardingRouter,
+  leads: leadsRouter, // Add this
+});
 
-export type AppRouter = typeof appRouter
-export { createContext } from './context'
-export type { Context } from './context'
+export type AppRouter = typeof appRouter;

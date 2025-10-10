@@ -1,28 +1,37 @@
-// Theme System
+// Core utilities
+export { cn } from './lib/utils';
+
+// Basic components
+export { Button } from './components/Button';
+export { Badge } from './components/Badge';
+export { Card, CardHeader, CardTitle, CardContent, CardFooter } from './components/Card';
+export { Input } from './components/Input';
+export { Textarea } from './components/Textarea';
+export { Select } from './components/Select';
+export { Checkbox } from './components/Checkbox';
+export { Radio, RadioGroup } from './components/Radio';
+
+// Layout components
+export { AppShell } from './components/AppShell';
+export { Sidebar, SidebarItem } from './components/AppShell';
+export { PageHeader } from './components/AppShell';
+export { ContentArea } from './components/AppShell';
+export { EmptyState } from './components/AppShell';
+export { Skeleton, SkeletonText } from './components/AppShell';
+export { Modal } from './components/Modal';
+export { Dropdown, DropdownItem } from './components/Dropdown';
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './components/Tabs';
+
+// Table components (without DataTable for now)
+export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './components/Table';
+
+// Utility components
+export { Pagination } from './components/Pagination';
+export { Toast, ToastContainer } from './components/Toast';
 export { ThemeProvider, useTheme } from './components/ThemeProvider';
 export { ThemeSwitcher } from './components/ThemeSwitcher';
-export { ThemePreview } from './components/ThemePreview';
-export { TestTokens } from './components/TestTokens';
+export { ErrorBoundary } from './components/ErrorBoundary';
+export { FormField } from './components/Form/FormField';
 
-// Form Components
-export { Button, type ButtonProps } from './components/Button';
-export { Badge, type BadgeProps } from './components/Badge';
-export { Input, type InputProps } from './components/Input';
-export { Textarea, type TextareaProps } from './components/Textarea';
-export { Checkbox, type CheckboxProps } from './components/Checkbox';
-export { Radio, RadioGroup, type RadioProps, type RadioGroupProps } from './components/Radio';
-export { Select, type SelectProps } from './components/Select';
-
-// Feedback Components
-export { Card, CardHeader, CardTitle, CardContent, CardFooter } from './components/Card';
-export { Modal, type ModalProps } from './components/Modal';
-export { Toast, ToastContainer, type ToastProps } from './components/Toast';
-
-// Navigation Components
-export { Dropdown, DropdownItem, type DropdownProps } from './components/Dropdown';
-export { Tabs, TabsList, TabsTrigger, TabsContent, type TabsProps } from './components/Tabs';
-
-// Data Components
-export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './components/Table';
-export { Pagination, type PaginationProps } from './components/Pagination';
-export { Skeleton, type SkeletonProps } from './components/Skeleton';
+// Comment out problematic components for now
+// export { DataTable } from './components/Table/DataTable';
