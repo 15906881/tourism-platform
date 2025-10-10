@@ -1,0 +1,107 @@
+name: Terraform Plan and Apply
+
+on:
+  push:
+    branches: [develop, test-terraform-workflow]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  TF_WORKING_DIR: infra/phase-2/environments
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+
+    - name: Terraform Format
+      id: fmt
+      run: terraform fmt -check -recursive ${{ env.TF_WORKING_DIR }}
+
+    - name: Terraform Init
+      id: init
+      working-directory: ${{ env.TF_WORKING_DIR }}/staging
+      run: terraform init
+
+    - name: Terraform Validate
+      id: validate
+      working-directory: ${{ env.TF_WORKING_DIR }}/staging
+      run: terraform validate -no-color
+
+    - name: Terraform Plan
+      id: plan
+      working-directory: ${{ env.TF_WORKING_DIR }}/staging
+      run: terraform plan -no-color -input=false -out=tfplan
+      continue-on-error: false
+
+    - name: Upload Terraform Plan
+      uses: actions/upload-artifact@v3
+      with:
+        name: terraform-plan
+        path: ${{ env.TF_WORKING_DIR }}/staging/tfplan
+
+  manual-approval:
+    name: Manual Approval
+    runs-on: ubuntu-latest
+    needs: [terraform-plan]
+    
+    steps:
+    - name: Await approval
+      uses: trstringer/manual-approval@v1
+      with:
+        secret: ${{ github.TOKEN }}
+        approvers: Senait
+        minimum-approvals: 1
+        issue-title: "Terraform Apply Approval Required"
+        issue-body: |
+          Please review the Terraform plan and comment with **approve** to proceed with deployment.
+          
+          **Branch:** ${{ github.ref }}
+          **Workflow:** ${{ github.workflow }}
+          **Commit:** ${{ github.sha }}
+
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    needs: [manual-approval]
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Download Terraform Plan
+      uses: actions/download-artifact@v3
+      with:
+        name: terraform-plan
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+
+    - name: Terraform Init
+      working-directory: ${{ env.TF_WORKING_DIR }}/staging
+      run: terraform init
+
+    - name: Terraform Apply
+      working-directory: ${{ env.TF_WORKING_DIR }}/staging
+      run: terraform apply -auto-approve -input=false tfplan
