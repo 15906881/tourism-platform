@@ -1,4 +1,5 @@
 FROM node:18-alpine AS base
+ARG APP=onboarding
 RUN apk add --no-cache libc6-compat
 RUN npm install -g pnpm
 
@@ -13,7 +14,7 @@ WORKDIR /app
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
 ENV NEXT_TELEMETRY_DISABLED 1
-RUN pnpm --filter onboarding build
+RUN pnpm -C apps/${APP} build
 
 FROM base AS runner
 WORKDIR /app
