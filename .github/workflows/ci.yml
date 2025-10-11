@@ -26,6 +26,8 @@ jobs:
         run: pnpm lint
       
       - name: Build packages
+        env:
+          ONBOARDING_SIGNING_SECRET: ${{ secrets.ONBOARDING_SIGNING_SECRET }}
         run: pnpm build
       
       - name: Type check
