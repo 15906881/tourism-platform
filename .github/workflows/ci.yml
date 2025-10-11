@@ -45,15 +45,13 @@ jobs:
           pnpm -r --filter "@weblynk/tokens" --if-present build
           pnpm -r --filter "@weblynk/ui" --if-present build
 
-      - name: Lint (apps only, ignore generated)
-        run: pnpm -r --filter "./apps/*" --if-present exec eslint . \
-          --ext .js,.jsx,.ts,.tsx \
-          --ignore-pattern "**/generated/**" \
-          --ignore-pattern "**/.next/**" \
-          --ignore-pattern "**/scripts/**"
+      # Lint (use each app's lint script; skips apps without it)
+      - name: Lint (apps only)
+        run: pnpm -r --filter "./apps/*" --if-present lint
 
+      # Type check (run tsc in each app; keep soft-fail)
       - name: Type check (apps only)
-        run: pnpm -r --filter "./apps/*" --if-present exec tsc --noEmit
+        run: pnpm -r --filter "./apps/*" exec tsc --noEmit
         continue-on-error: true
 
       - name: Build (apps only)
