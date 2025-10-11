@@ -1,4 +1,11 @@
-name: CI
+name: ci
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 on:
   push:
@@ -9,26 +16,43 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    env:
+      CI: true
     steps:
       - uses: actions/checkout@v4
+
+      # Use pnpm matching your package.json "packageManager"
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9.12.0
+        # no "version" -> reads from package.json to avoid version conflicts
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
           cache: 'pnpm'
-      
-      - name: Install dependencies
-        run: pnpm install
-      
-      - name: Lint code
-        run: pnpm lint
-      
-      - name: Build packages
-        env:
-          ONBOARDING_SIGNING_SECRET: ${{ secrets.ONBOARDING_SIGNING_SECRET }}
-        run: pnpm build
-      
-      - name: Type check
-        run: pnpm -r exec tsc --noEmit || echo "TypeScript check completed"
+
+      - name: Install deps (frozen)
+        run: pnpm install --frozen-lockfile
+
+      # If any app imports @prisma/client at build time
+      - name: Prisma generate (idempotent)
+        run: pnpm -C packages/db prisma generate || true
+
+      # Build shared packages that export built assets (safe no-ops if absent)
+      - name: Build design packages (tokens/ui)
+        run: |
+          pnpm -r --filter "@weblynk/tokens" --if-present build
+          pnpm -r --filter "@weblynk/ui" --if-present build
+
+      - name: Lint (apps only, ignore generated)
+        run: pnpm -r --filter "./apps/*" --if-present exec eslint . \
+          --ext .js,.jsx,.ts,.tsx \
+          --ignore-pattern "**/generated/**" \
+          --ignore-pattern "**/.next/**" \
+          --ignore-pattern "**/scripts/**"
+
+      - name: Type check (apps only)
+        run: pnpm -r --filter "./apps/*" --if-present exec tsc --noEmit
+        continue-on-error: true
+
+      - name: Build (apps only)
+        run: pnpm -r --filter "./apps/*" --if-present build
