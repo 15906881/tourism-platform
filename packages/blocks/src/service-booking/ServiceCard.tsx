@@ -3,11 +3,11 @@ import { Button, Badge } from '@weblynk/ui';
 import { clsx } from 'clsx';
 
 export interface ServiceCardProps {
-  id: string;
+ _id: string;
   name: string;
   description: string;
   price: number;
-  currency?: string;
+ _currency?: string;
   duration?: string;
   image?: string;
   category?: string;
@@ -17,11 +17,11 @@ export interface ServiceCardProps {
 }
 
 export function ServiceCard({
-  id,
+ _id,
   name,
   description,
   price,
-  currency = 'USD',
+ _currency = 'USD',
   duration,
   image,
   category,

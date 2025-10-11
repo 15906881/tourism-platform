@@ -7,7 +7,7 @@ export interface HeroProps {
   headline: string;
   subheadline?: string;
   ctaText?: string;
-  ctaLink?: string;
+ _ctaLink?: string;
   onCtaClick?: () => void;
   className?: string;
 }
@@ -17,7 +17,7 @@ export function Hero({
   headline,
   subheadline,
   ctaText,
-  ctaLink,
+ _ctaLink,
   onCtaClick,
   className,
 }: HeroProps) {

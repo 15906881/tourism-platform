@@ -11,8 +11,8 @@ export interface TemplateRendererProps {
 export function TemplateRenderer({ config, className }: TemplateRendererProps) {
   const renderBlock = (block: any) => {
     // Dynamic import will be resolved at runtime by consumer app
-    // @ts-ignore - workspace dependency resolved by consumer
-    const Blocks = require('@weblynk/blocks');
+    // @ts-expect-error - workspace dependency resolved by consumer
+    const Blocks = await import('@weblynk/blocks');
     const BlockComponent = Blocks[block.type];
     
     if (!BlockComponent) {

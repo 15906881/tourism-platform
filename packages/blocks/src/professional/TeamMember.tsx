@@ -2,7 +2,7 @@ import React from 'react';
 import { clsx } from 'clsx';
 
 export interface TeamMemberProps {
-  id: string;
+ _id: string;
   name: string;
   role: string;
   bio: string;
@@ -17,7 +17,7 @@ export interface TeamMemberProps {
 }
 
 export function TeamMember({
-  id,
+ _id,
   name,
   role,
   bio,

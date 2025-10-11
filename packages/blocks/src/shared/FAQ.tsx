@@ -4,7 +4,7 @@ import React from 'react';
 import { clsx } from 'clsx';
 
 export interface FAQItem {
-  id: string;
+ _id: string;
   question: string;
   answer: string;
 }
@@ -17,8 +17,8 @@ export interface FAQProps {
 export function FAQ({ faqs, className }: FAQProps) {
   const [openId, setOpenId] = React.useState<string | null>(null);
 
-  const toggle = (id: string) => {
-    setOpenId(openId === id ? null : id);
+  const toggle = (_id: string) => {
+    setOpenId(openId ===_id ? null :_id);
   };
 
   return (

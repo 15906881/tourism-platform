@@ -2,7 +2,7 @@ import React from 'react';
 import { clsx } from 'clsx';
 
 export interface Amenity {
-  id: string;
+ _id: string;
   name: string;
   icon?: string;
   category?: string;

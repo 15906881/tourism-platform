@@ -1,16 +1,52 @@
 # Build outputs
-.next/
 dist/
 build/
+.next/
 out/
+.output/
+*.next/
 
 # Dependencies
 node_modules/
 
 # Generated files
-*.generated.*
 generated/
+*.generated.*
+*.d.ts
 
-# Debug files
-debug-prisma.sh
-fix-dockerfiles-build-by-path.sh
+# Prisma
+**/generated/**
+
+# Scripts and configs
+**/scripts/**
+**/config/
+*.config.js
+*.config.ts
+tailwind.*.js
+
+# Test files
+**/*.test.*
+**/*.spec.*
+
+# Coverage
+coverage/
+
+# Logs
+*.log
+
+# Environment files
+.env*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Next.js specific
+apps/admin/.next/
+apps/web/.next/
+**/.next/

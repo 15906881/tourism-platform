@@ -3,11 +3,11 @@ import { Button } from '@weblynk/ui';
 import { clsx } from 'clsx';
 
 export interface PricingTier {
-  id: string;
+ _id: string;
   name: string;
   description: string;
   price: number;
-  currency?: string;
+ _currency?: string;
   period?: string;
   features: string[];
   highlighted?: boolean;

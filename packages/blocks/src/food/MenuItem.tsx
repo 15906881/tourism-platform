@@ -3,11 +3,11 @@ import { Badge } from '@weblynk/ui';
 import { clsx } from 'clsx';
 
 export interface MenuItemProps {
-  id: string;
+ _id: string;
   name: string;
   description: string;
   price: number;
-  currency?: string;
+ _currency?: string;
   image?: string;
   dietary?: ('vegetarian' | 'vegan' | 'gluten-free' | 'dairy-free')[];
   spicyLevel?: 1 | 2 | 3;
@@ -16,11 +16,11 @@ export interface MenuItemProps {
 }
 
 export function MenuItem({
-  id,
+ _id,
   name,
   description,
   price,
-  currency = 'USD',
+ _currency = 'USD',
   image,
   dietary,
   spicyLevel,

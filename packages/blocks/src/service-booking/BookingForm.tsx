@@ -15,13 +15,13 @@ export interface BookingData {
 }
 
 export interface BookingFormProps {
-  serviceId: string;
+ _serviceId: string;
   serviceName: string;
   onSubmit: (data: BookingData) => Promise<void>;
   className?: string;
 }
 
-export function BookingForm({ serviceId, serviceName, onSubmit, className }: BookingFormProps) {
+export function BookingForm({_serviceId, serviceName, onSubmit, className }: BookingFormProps) {
   const [step, setStep] = React.useState(1);
   const [loading, setLoading] = React.useState(false);
   const [formData, setFormData] = React.useState<BookingData>({

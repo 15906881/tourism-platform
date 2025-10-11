@@ -5,7 +5,7 @@ import { Badge } from '@weblynk/ui';
 import { clsx } from 'clsx';
 
 export interface PortfolioItem {
-  id: string;
+ _id: string;
   title: string;
   description: string;
   image: string;

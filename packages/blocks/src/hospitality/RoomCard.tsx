@@ -5,11 +5,11 @@ import { Button, Badge } from '@weblynk/ui';
 import { clsx } from 'clsx';
 
 export interface RoomCardProps {
-  id: string;
+ _id: string;
   name: string;
   description: string;
   price: number;
-  currency?: string;
+ _currency?: string;
   images: string[];
   capacity: number;
   bedType?: string;
@@ -21,11 +21,11 @@ export interface RoomCardProps {
 }
 
 export function RoomCard({
-  id,
+ _id,
   name,
   description,
   price,
-  currency = 'USD',
+ _currency = 'USD',
   images,
   capacity,
   bedType,

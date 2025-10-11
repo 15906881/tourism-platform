@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import type { Context } from '../context';
 
 // Placeholder JWT verify - replace with actual Cognito verification
-async function verifyJWT(token: string) {
+async function verifyJWT(_token: string) {
   // TODO: Implement actual Cognito JWT verification
   // For now, return mock data to unblock development
   return {
@@ -19,10 +19,10 @@ export async function requireAuth(ctx: Context) {
     throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Missing or invalid token' });
   }
 
-  const token = authHeader.substring(7);
+  const _token = authHeader.substring(7);
   
   try {
-    const payload = await verifyJWT(token);
+    const payload = await verifyJWT(_token);
     return {
       ...ctx,
       tenantId: payload.tenantId,
