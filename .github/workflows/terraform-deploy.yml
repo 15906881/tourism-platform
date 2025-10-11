@@ -9,7 +9,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  TF_WORKING_DIR: infra/phase-2/environments
+  TF_WORKING_DIR: infra/phase-2/environments/staging
 
 jobs:
   terraform-plan:
@@ -31,21 +31,18 @@ jobs:
 
     - name: Terraform Format
       id: fmt
-      run: terraform fmt -check -recursive ${{ env.TF_WORKING_DIR }}
+      run: terraform fmt -check
 
     - name: Terraform Init
       id: init
-      working-directory: ${{ env.TF_WORKING_DIR }}/staging
       run: terraform init
 
     - name: Terraform Validate
       id: validate
-      working-directory: ${{ env.TF_WORKING_DIR }}/staging
       run: terraform validate -no-color
 
     - name: Terraform Plan
       id: plan
-      working-directory: ${{ env.TF_WORKING_DIR }}/staging
       run: terraform plan -no-color -input=false -out=tfplan
       continue-on-error: false
 
@@ -53,9 +50,8 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: terraform-plan
-        path: ${{ env.TF_WORKING_DIR }}/staging/tfplan
+        path: tfplan
 
-  # Only run manual approval on push (not PRs)
   manual-approval:
     name: Manual Approval
     runs-on: ubuntu-latest
@@ -102,9 +98,7 @@ jobs:
       uses: hashicorp/setup-terraform@v2
 
     - name: Terraform Init
-      working-directory: ${{ env.TF_WORKING_DIR }}/staging
       run: terraform init
 
     - name: Terraform Apply
-      working-directory: ${{ env.TF_WORKING_DIR }}/staging
       run: terraform apply -auto-approve -input=false tfplan
