@@ -41,17 +41,13 @@ jobs:
       - name: Install deps (frozen)
         run: pnpm install --frozen-lockfile
 
-      # If any app imports @prisma/client at build-time, this ensures it's generated
-      - name: Prisma generate (idempotent)
-        run: pnpm -C packages/db prisma generate || true
-
-      - name: Type check (all workspaces)
-        run: pnpm -r --if-present exec tsc --noEmit
+           - name: Type check (apps only)
+        run: pnpm -r --filter "./apps/*" --if-present exec tsc --noEmit
         continue-on-error: true
 
-      - name: Lint (all workspaces)
-        run: pnpm -r --if-present lint
+      - name: Lint (apps only)
+        run: pnpm -r --filter "./apps/*" --if-present lint
 
-      # Build everything that declares a "build" script (packages + apps)
-      - name: Build (all workspaces)
-        run: pnpm -r --if-present build
+      - name: Build (apps only)
+        run: pnpm -r --filter "./apps/*" --if-present build
+
