@@ -1,6 +1,6 @@
 FROM node:18-alpine AS base
 RUN apk add --no-cache libc6-compat
-RUN pnpm install -g pnpm
+RUN npm install -g pnpm
 
 FROM base AS deps
 WORKDIR /app
