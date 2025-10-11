@@ -12,7 +12,8 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "@weblynk/tokens": "workspace:*",
-    "@weblynk/ui": "workspace:*"
+    "@weblynk/ui": "workspace:*",
+    "@weblynk/db": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20",
