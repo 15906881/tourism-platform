@@ -6,7 +6,7 @@ FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml* .npmrc* ./
 COPY apps/photos-entry/package.json ./apps/photos-entry/
-RUN ppnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
