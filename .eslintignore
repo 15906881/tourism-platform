@@ -1,0 +1,16 @@
+# Build outputs
+.next/
+dist/
+build/
+out/
+
+# Dependencies
+node_modules/
+
+# Generated files
+*.generated.*
+generated/
+
+# Debug files
+debug-prisma.sh
+fix-dockerfiles-build-by-path.sh

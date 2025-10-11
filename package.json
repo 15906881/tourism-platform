@@ -11,7 +11,7 @@
     "dev": "pnpm -r dev",
     "build": "turbo run build",
     "test": "pnpm -r test",
-    "lint": "eslint . --ignore-path .gitignore",
+    "lint": "eslint .",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "test:e2e": "playwright test tests/e2e",
     "test:a11y": "playwright test tests/a11y",
