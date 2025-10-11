@@ -12,9 +12,11 @@
     "./css": "./dist/tokens.css",
     "./tailwind": "./dist/tailwind-preset.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "node scripts/build-tokens.js",
+    "build": "mkdir -p dist && cp -f src/tokens.css dist/tokens.css",
     "dev": "node scripts/build-tokens.js --watch"
   }
 }
