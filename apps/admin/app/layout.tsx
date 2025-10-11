@@ -1,3 +1,4 @@
+import "@weblynk/tokens/css";
 export const metadata = {
   title: 'Tourism Platform - Admin',
   description: 'Admin dashboard for tourism platform management'
