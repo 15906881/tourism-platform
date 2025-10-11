@@ -2,7 +2,7 @@
   "name": "tourism-platform",
   "version": "1.0.0",
   "private": true,
-  "packageManager": "pnpm@10.17.1",
+  "packageManager": "pnpm@9.12.0",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -11,13 +11,14 @@
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "eslint .",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "test:e2e": "playwright test tests/e2e",
     "test:a11y": "playwright test tests/a11y",
     "test:all": "playwright test",
     "typecheck": "pnpm -r exec tsc --noEmit",
-    "smoke:onboarding": "bash scripts/onboarding-smoke.sh http://localhost:3000"
+    "smoke:onboarding": "bash scripts/onboarding-smoke.sh http://localhost:3000",
+    "postinstall": "pnpm --filter @weblynk/db run db:generate || true"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.8.0",
@@ -29,7 +30,7 @@
     "typescript": "^5.9.3"
   },
   "engines": {
-    "node": ">=18 <21"
+    "node": ">=20.10.0"
   },
   "dependencies": {
     "@trpc/client": "^10.45.2"
