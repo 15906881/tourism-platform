@@ -41,7 +41,7 @@ jobs:
       - name: Install deps (frozen)
         run: pnpm install --frozen-lockfile
 
-           - name: Type check (apps only)
+     - name: Type check (apps only)
         run: pnpm -r --filter "./apps/*" --if-present exec tsc --noEmit
         continue-on-error: true
 
