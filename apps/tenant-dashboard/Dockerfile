@@ -1,12 +1,12 @@
 FROM node:18-alpine AS base
 RUN apk add --no-cache libc6-compat
-RUN npm install -g pnpm
+RUN pnpm install -g pnpm
 
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml* .npmrc* ./
 COPY apps/tenant-dashboard/package.json ./apps/tenant-dashboard/
-RUN pnpm install --frozen-lockfile
+RUN ppnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
