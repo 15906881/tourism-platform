@@ -1,6 +1,6 @@
 # Update CI workflow to use pnpm instead of npm
 cat > .github/workflows/ci.yml << 'EOF'
-name: CI
+name:CI
 
 permissions:
   contents: read
