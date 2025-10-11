@@ -1,11 +1,20 @@
-name: Deploy
 # DISABLED: AWS authentication issues
-# on:
-#   push:
-#     branches: [main]
+# This workflow is disabled until AWS OIDC authentication is configured
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Deploy disabled - AWS auth needed'
+        required: false
 
 jobs:
-  placeholder:
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Deploy workflow disabled - fix AWS authentication first"
+      - name: Workflow Disabled
+        run: |
+          echo "❌ Deploy workflow is disabled"
+          echo "🔧 Fix AWS authentication to enable"
+          exit 1
