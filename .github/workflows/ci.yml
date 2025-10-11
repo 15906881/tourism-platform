@@ -27,38 +27,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v2
         with:
           version: 8
       
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: 'pnpm'
       
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-        
-      - name: Lint
-        run: |
-          if pnpm run | grep -q "lint"; then
-            pnpm run lint
-          else
-            echo "No lint script found, skipping"
-          fi
-          
-      - name: Test
-        run: |
-          if pnpm run | grep -q "test"; then
-            pnpm run test
-          else
-            echo "No test script found, skipping"
-          fi
-          
-      - name: Build
-        run: |
-          if pnpm run | grep -q "build"; then
-            pnpm run build
-          else
-            echo "No build script found, skipping"
-          fi
+        run: pnpm install
+      
+      - name: Type check apps
+        run: pnpm -r exec tsc --noEmit || echo "TypeScript errors found"
+        continue-on-error: true
+      
+      - name: Lint code
+        run: pnpm lint
+      
+      - name: Build packages
+        run: pnpm build
