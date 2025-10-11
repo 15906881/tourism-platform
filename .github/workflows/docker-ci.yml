@@ -4,15 +4,15 @@ on:
   pull_request:
     branches: [develop, main]
     paths:
-      - 'api/**'
-      - 'web/**'
+      - 'apps/**'
+      - 'packages/**'
       - 'docker-compose.yml'
       - '.github/workflows/docker-ci.yml'
   push:
     branches: [develop, main]
     paths:
-      - 'api/**'
-      - 'web/**'
+      - 'apps/**'
+      - 'packages/**'
       - 'docker-compose.yml'
       - '.github/workflows/docker-ci.yml'
 
@@ -25,18 +25,18 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [api, web]
+        app: [tenant-dashboard, site-renderer, admin]
     steps:
       - uses: actions/checkout@v4
+      
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
+      
       - name: Build ${{ matrix.app }} (no push)
         uses: docker/build-push-action@v6
         with:
-          context: ./${{ matrix.app }}
+          context: .
+          file: ./apps/${{ matrix.app }}/Dockerfile
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # Web needs the API base URL at build time
-          build-args: |
-            VITE_API_BASE_URL=http://localhost:8000
