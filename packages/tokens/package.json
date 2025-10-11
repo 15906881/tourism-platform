@@ -9,11 +9,12 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./css": "./dist/tokens.css",
+    "./css": "./src/tokens.css",
     "./tailwind": "./dist/tailwind-preset.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "build": "mkdir -p dist && cp -f src/tokens.css dist/tokens.css",

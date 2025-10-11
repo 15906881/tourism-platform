@@ -36,6 +36,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@weblynk/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@weblynk/tokens':
         specifier: workspace:*
         version: link:../../packages/tokens
@@ -228,6 +231,9 @@ importers:
         specifier: ^5.18.0
         version: 5.22.0(prisma@5.22.0)
     devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.19
       prisma:
         specifier: ^5.18.0
         version: 5.22.0
