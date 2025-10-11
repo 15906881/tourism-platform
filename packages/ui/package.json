@@ -13,7 +13,7 @@
     "./styles/a11y.css": "./dist/styles/a11y.css"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "mkdir -p dist/styles && [ -f src/styles/a11y.css ] && cp -f src/styles/a11y.css dist/styles/a11y.css || true",
     "dev": "tsc -p tsconfig.json --watch"
   },
   "devDependencies": {
