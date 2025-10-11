@@ -1,6 +1,4 @@
-# Update CI workflow to use pnpm instead of npm
-cat > .github/workflows/ci.yml << 'EOF'
-name:CI
+name: ci
 
 permissions:
   contents: read
@@ -25,29 +23,35 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+    env:
+      CI: true
     steps:
       - uses: actions/checkout@v4
-      
+
+      # Match repo's packageManager version
       - uses: pnpm/action-setup@v2
         with:
-          version: 8
-      
+          version: 9.12.0
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
           cache: 'pnpm'
-      
-      - name: Install dependencies
-        run: pnpm install
-      
-      - name: Type check apps
-        run: pnpm -r exec tsc --noEmit || echo "TypeScript errors found"
+
+      - name: Install deps (frozen)
+        run: pnpm install --frozen-lockfile
+
+      # If any app imports @prisma/client at build-time, this ensures it's generated
+      - name: Prisma generate (idempotent)
+        run: pnpm -C packages/db prisma generate || true
+
+      - name: Type check (all workspaces)
+        run: pnpm -r --if-present exec tsc --noEmit
         continue-on-error: true
-      
-      - name: Lint code
-        run: pnpm lint
-      
-      - name: Build packages
-        run: pnpm build
-EOF
+
+      - name: Lint (all workspaces)
+        run: pnpm -r --if-present lint
+
+      # Build everything that declares a "build" script (packages + apps)
+      - name: Build (all workspaces)
+        run: pnpm -r --if-present build
