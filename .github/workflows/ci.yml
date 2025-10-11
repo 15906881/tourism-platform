@@ -29,4 +29,4 @@ jobs:
         run: pnpm build
       
       - name: Type check
-        run: pnpm -r exec tsc --noEmit || echo "TypeScript completed"
+        run: pnpm -r exec tsc --noEmit || echo "TypeScript check completed"
