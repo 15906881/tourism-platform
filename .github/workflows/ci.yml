@@ -12,7 +12,7 @@ on:
     branches: [main, develop]
     paths-ignore: ['**/*.md', 'docs/**']
   pull_request:
-    branches: [main, develop] 
+    branches: [main, develop]
     paths-ignore: ['**/*.md', 'docs/**']
 
 jobs:
@@ -23,9 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Use pnpm matching your package.json "packageManager"
+      # Match repo's packageManager version from package.json
       - uses: pnpm/action-setup@v4
-        # no "version" -> reads from package.json to avoid version conflicts
 
       - uses: actions/setup-node@v4
         with:
@@ -35,24 +34,34 @@ jobs:
       - name: Install deps (frozen)
         run: pnpm install --frozen-lockfile
 
-      # If any app imports @prisma/client at build time
+      # Generate Prisma client from the canonical schema
       - name: Prisma generate (idempotent)
-        run: pnpm -C packages/db prisma generate || true
+        run: pnpm --dir packages/db prisma generate || true
 
-      # Build shared packages that export built assets (safe no-ops if absent)
+      # Build shared design packages (safe no-ops if package missing)
       - name: Build design packages (tokens/ui)
         run: |
           pnpm -r --filter "@weblynk/tokens" --if-present build
           pnpm -r --filter "@weblynk/ui" --if-present build
 
-      # Lint (use each app's lint script; skips apps without it)
+      # 🔑 Build backend libs needed by apps (fixes @weblynk/server not found)
+      - name: Build backend libs (server + db)
+        run: |
+          pnpm -r --filter "@weblynk/server" --if-present build
+          pnpm -r --filter "@weblynk/db" --if-present build
+
+      # Lint (apps only; skips app if it lacks a lint script)
       - name: Lint (apps only)
         run: pnpm -r --filter "./apps/*" --if-present lint
 
-      # Type check (run tsc in each app; keep soft-fail)
+      # Type check (apps only); soft-fail to keep CI informative
       - name: Type check (apps only)
         run: pnpm -r --filter "./apps/*" exec tsc --noEmit
         continue-on-error: true
 
+      # Build apps after libs are compiled
       - name: Build (apps only)
+        env:
+          # Helps avoid ENOSPC cache issues on runners
+          NEXT_DISABLE_WEBPACK_CACHE: 1
         run: pnpm -r --filter "./apps/*" --if-present build
