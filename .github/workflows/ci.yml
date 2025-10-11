@@ -23,6 +23,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [tenant-dashboard, site-renderer, admin]
     
     steps:
       - uses: actions/checkout@v4
@@ -38,6 +41,18 @@ jobs:
       
       - name: Install dependencies
         run: pnpm install
+      
+      - name: Build ${{ matrix.app }} (Docker)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./apps/${{ matrix.app }}/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            APP=${{ matrix.app }}
+            NEXT_PUBLIC_API_BASE_URL=${{ vars.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000' }}
       
       - name: Type check apps
         run: pnpm -r exec tsc --noEmit || echo "TypeScript errors found"

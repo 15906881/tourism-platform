@@ -1,32 +1,32 @@
-FROM node:18-alpine AS base
-RUN apk add --no-cache libc6-compat
-RUN npm install -g pnpm
+# syntax=docker/dockerfile:1.7
+ARG NODE_VERSION=20
+FROM node:${NODE_VERSION}-bullseye AS builder
+WORKDIR /repo
 
-FROM base AS deps
-WORKDIR /app
-COPY package.json pnpm-lock.yaml* .npmrc* ./
-COPY apps/site-renderer/package.json ./apps/site-renderer/
-RUN pnpm install --frozen-lockfile
+# Enable corepack for pnpm
+RUN corepack enable
 
-FROM base AS builder
-WORKDIR /app
+# Copy package files for optimal layer caching
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY packages/*/package.json packages/*/
+COPY apps/*/package.json apps/*/
+
+# Pre-fetch dependencies to cache
+RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store \
+    pnpm fetch
+
+# Copy entire codebase
 COPY . .
-COPY --from=deps /app/node_modules ./node_modules
-ENV NEXT_TELEMETRY_DISABLED 1
-RUN pnpm --filter site-renderer build
 
-FROM base AS runner
-WORKDIR /app
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Generate Prisma client if needed
+RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store \
+    pnpm -r prisma generate 2>/dev/null || echo "Prisma not needed"
 
-COPY --from=builder /app/apps/site-renderer/public ./apps/site-renderer/public
-COPY --from=builder --chown=nextjs:nodejs /app/apps/site-renderer/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/site-renderer/.next/static ./apps/site-renderer/.next/static
+# Build arguments
+ARG APP
+ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 
-USER nextjs
-EXPOSE 3001
-ENV PORT 3001
-CMD ["node", "apps/site-renderer/server.js"]
+# Build the specific app
+RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store \
+    pnpm install -r --offline --frozen-lockfile && \
+    pnpm -C apps/${APP} build
