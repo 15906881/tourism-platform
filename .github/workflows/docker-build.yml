@@ -1,0 +1,24 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-apps:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [tenant-dashboard, site-renderer, admin]
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      
+      - name: Build ${{ matrix.app }}
+        run: |
+          pnpm install
+          pnpm -C apps/${{ matrix.app }} build

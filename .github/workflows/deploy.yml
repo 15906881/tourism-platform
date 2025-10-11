@@ -1,0 +1,11 @@
+name: Deploy
+# DISABLED: AWS authentication issues
+# on:
+#   push:
+#     branches: [main]
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Deploy workflow disabled - fix AWS authentication first"
