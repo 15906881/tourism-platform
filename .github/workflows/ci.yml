@@ -23,7 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Use pnpm from package.json "packageManager"
       - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
@@ -40,15 +39,16 @@ jobs:
       - name: Lint (apps only)
         run: pnpm -r --filter "./apps/*" --if-present lint
 
+      # ✅ Build libraries first so their type declarations exist
+      - name: Build packages (libs first)
+        run: pnpm -r --filter "./packages/*" --if-present build
+
+      # Now TS can resolve @weblynk/ui, @weblynk/blocks, etc.
       - name: Type check (apps only)
         run: pnpm -r --filter "./apps/*" exec tsc --noEmit
         continue-on-error: true
 
-      # ---- build order matters: libs first, then apps ----
-      - name: Build packages (libs first)
-        run: pnpm -r --filter "./packages/*" --if-present build
-
-      - name: Build apps (needs secrets at build time)
+      - name: Build apps
         env:
           ONBOARDING_SIGNING_SECRET: ${{ secrets.ONBOARDING_SIGNING_SECRET }}
           NEXTAUTH_SECRET:          ${{ secrets.NEXTAUTH_SECRET }}
