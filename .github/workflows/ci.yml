@@ -9,10 +9,10 @@ concurrency:
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, integrate/**]
     paths-ignore: ['**/*.md', 'docs/**']
   pull_request:
-    branches: [main, develop] 
+    branches: [main, develop]
     paths-ignore: ['**/*.md', 'docs/**']
 
 jobs:
@@ -23,36 +23,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Use pnpm matching your package.json "packageManager"
+      # Use pnpm declared in package.json "packageManager"
       - uses: pnpm/action-setup@v4
-        # no "version" -> reads from package.json to avoid version conflicts
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
           cache: 'pnpm'
 
       - name: Install deps (frozen)
         run: pnpm install --frozen-lockfile
 
-      # If any app imports @prisma/client at build time
       - name: Prisma generate (idempotent)
         run: pnpm -C packages/db prisma generate || true
 
-      # Build shared packages that export built assets (safe no-ops if absent)
-      - name: Build design packages (tokens/ui)
-        run: |
-          pnpm -r --filter "@weblynk/tokens" --if-present build
-          pnpm -r --filter "@weblynk/ui" --if-present build
-
-      # Lint (use each app's lint script; skips apps without it)
       - name: Lint (apps only)
         run: pnpm -r --filter "./apps/*" --if-present lint
 
-      # Type check (run tsc in each app; keep soft-fail)
       - name: Type check (apps only)
         run: pnpm -r --filter "./apps/*" exec tsc --noEmit
         continue-on-error: true
 
-      - name: Build (apps only)
+      - name: Build apps
+        env:
+          ONBOARDING_SIGNING_SECRET: ${{ secrets.ONBOARDING_SIGNING_SECRET }}
+          NEXTAUTH_SECRET:          ${{ secrets.NEXTAUTH_SECRET }}
         run: pnpm -r --filter "./apps/*" --if-present build
