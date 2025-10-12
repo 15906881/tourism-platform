@@ -41,6 +41,16 @@ jobs:
         run: pnpm -r --filter "./apps/*" --if-present lint
 
       - name: Type check (apps only)
+      - name: Build packages (libs first)
+        run: |
+          pnpm -r --filter "./packages/*" --if-present build
+
+      - name: Build apps
+        env:
+          ONBOARDING_SIGNING_SECRET: ${{ secrets.ONBOARDING_SIGNING_SECRET }}
+          NEXTAUTH_SECRET:          ${{ secrets.NEXTAUTH_SECRET }}
+        run: |
+          pnpm -r --filter "./apps/*" --if-present build
         run: pnpm -r --filter "./apps/*" exec tsc --noEmit
         continue-on-error: true
 
