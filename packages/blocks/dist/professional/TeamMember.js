@@ -1,0 +1,7 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import React from 'react';
+import { clsx } from 'clsx';
+export function TeamMember({ _id, name, role, bio, photo, email, phone, socialLinks, className, }) {
+    return (_jsxs("div", { className: clsx('bg-white rounded-lg shadow-sm overflow-hidden', className), children: [_jsx("img", { src: photo, alt: name, className: "w-full h-64 object-cover" }), _jsxs("div", { className: "p-6", children: [_jsx("h3", { className: "text-xl font-display mb-1", children: name }), _jsx("p", { className: "text-gold-600 text-sm font-medium mb-3", children: role }), _jsx("p", { className: "text-gray-600 mb-4", children: bio }), (email || phone) && (_jsxs("div", { className: "space-y-2 mb-4 text-sm", children: [email && (_jsxs("a", { href: `mailto:${email}`, className: "block text-gray-700 hover:text-gold-600", children: ["Email: ", email] })), phone && (_jsxs("a", { href: `tel:${phone}`, className: "block text-gray-700 hover:text-gold-600", children: ["Phone: ", phone] }))] })), socialLinks && (_jsxs("div", { className: "flex gap-3 text-sm", children: [socialLinks.linkedin && (_jsx("a", { href: socialLinks.linkedin, target: "_blank", rel: "noopener noreferrer", className: "text-gray-600 hover:text-gold-600", children: "LinkedIn" })), socialLinks.twitter && (_jsx("a", { href: socialLinks.twitter, target: "_blank", rel: "noopener noreferrer", className: "text-gray-600 hover:text-gold-600", children: "Twitter" }))] }))] })] }));
+}
+//# sourceMappingURL=TeamMember.js.map

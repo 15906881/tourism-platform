@@ -1,0 +1,5 @@
+
+
+> @weblynk/db@1.0.0 build /Users/sadeshibeshi/tourism-platform/packages/db
+> tsc -p tsconfig.json
+

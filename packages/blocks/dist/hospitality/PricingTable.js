@@ -1,0 +1,10 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import React from 'react';
+import { Button } from '@weblynk/ui';
+import { clsx } from 'clsx';
+export function PricingTable({ tiers, className }) {
+    return (_jsx("section", { className: clsx('py-16 px-4', className), children: _jsxs("div", { className: "max-w-7xl mx-auto", children: [_jsx("h2", { className: "text-3xl font-display mb-12 text-center", children: "Choose Your Room" }), _jsx("div", { className: clsx('grid gap-6', tiers.length === 2 && 'md:grid-cols-2 max-w-4xl mx-auto', tiers.length === 3 && 'md:grid-cols-3', tiers.length >= 4 && 'md:grid-cols-2 lg:grid-cols-4'), children: tiers.map((tier) => (_jsxs("div", { className: clsx('bg-white rounded-lg p-8 transition-all', tier.highlighted
+                            ? 'shadow-luxury-lg ring-2 ring-gold-500 scale-105'
+                            : 'shadow-sm hover:shadow-md'), children: [tier.highlighted && (_jsx("div", { className: "text-gold-600 text-sm font-medium mb-2", children: "MOST POPULAR" })), _jsx("h3", { className: "text-2xl font-display mb-2", children: tier.name }), _jsx("p", { className: "text-gray-600 text-sm mb-6", children: tier.description }), _jsxs("div", { className: "mb-6", children: [_jsxs("span", { className: "text-4xl font-bold text-gray-900", children: ["$", tier.price] }), tier.period && (_jsxs("span", { className: "text-gray-500 text-sm ml-2", children: ["/ ", tier.period] }))] }), _jsx("ul", { className: "space-y-3 mb-8", children: tier.features.map((feature, index) => (_jsxs("li", { className: "flex items-start gap-2", children: [_jsx("span", { className: "text-gold-600 mt-1", children: "\u2713" }), _jsx("span", { className: "text-gray-700 text-sm", children: feature })] }, index))) }), tier.onSelect && (_jsx(Button, { variant: tier.highlighted ? 'primary' : 'secondary', onClick: () => tier.onSelect(tier.id), className: "w-full", children: tier.ctaText || 'Select' }))] }, tier.id))) })] }) }));
+}
+//# sourceMappingURL=PricingTable.js.map

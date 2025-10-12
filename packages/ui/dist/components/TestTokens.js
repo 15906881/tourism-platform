@@ -1,0 +1,6 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import React from 'react';
+export function TestTokens() {
+    return (_jsxs("div", { className: "p-8 space-y-8", children: [_jsxs("section", { children: [_jsx("h1", { className: "text-4xl font-display text-gold-600 mb-4", children: "Luxury Design Tokens Test" }), _jsx("p", { className: "text-lg text-gray-700", children: "Testing typography, colors, and spacing from the luxury preset." })] }), _jsxs("section", { children: [_jsx("h2", { className: "text-2xl font-display mb-4", children: "Color Palettes" }), _jsxs("div", { className: "space-y-4", children: [_jsx("div", { className: "flex gap-2", children: [50, 100, 500, 600, 900].map((shade) => (_jsx("div", { className: `w-16 h-16 rounded bg-gold-${shade} shadow-luxury`, title: `gold-${shade}` }, shade))) }), _jsx("div", { className: "flex gap-2", children: [50, 100, 500, 600, 900].map((shade) => (_jsx("div", { className: `w-16 h-16 rounded bg-rose-${shade} shadow-luxury`, title: `rose-${shade}` }, shade))) }), _jsx("div", { className: "flex gap-2", children: [50, 100, 500, 600, 900].map((shade) => (_jsx("div", { className: `w-16 h-16 rounded bg-navy-${shade} shadow-luxury`, title: `navy-${shade}` }, shade))) })] })] })] }));
+}
+//# sourceMappingURL=TestTokens.js.map

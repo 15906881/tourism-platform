@@ -1,0 +1,8 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import React from 'react';
+import { Button, Badge } from '@weblynk/ui';
+import { clsx } from 'clsx';
+export function ServiceCard({ _id, name, description, price, _currency = 'USD', duration, image, category, featured, onBook, className, }) {
+    return (_jsxs("div", { className: clsx('bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow', className), children: [image && (_jsxs("div", { className: "relative h-48 overflow-hidden", children: [_jsx("img", { src: image, alt: name, className: "w-full h-full object-cover" }), featured && (_jsx(Badge, { variant: "warning", className: "absolute top-2 right-2", children: "Featured" }))] })), _jsxs("div", { className: "p-6", children: [_jsxs("div", { className: "flex justify-between items-start mb-2", children: [_jsx("h3", { className: "text-xl font-display", children: name }), category && (_jsx(Badge, { variant: "default", size: "sm", children: category }))] }), _jsx("p", { className: "text-gray-600 mb-4 line-clamp-3", children: description }), _jsxs("div", { className: "flex justify-between items-center", children: [_jsxs("div", { children: [_jsxs("span", { className: "text-2xl font-bold text-gold-600", children: ["$", price] }), currency !== 'USD' && (_jsx("span", { className: "text-sm text-gray-500 ml-1", children: currency })), duration && (_jsxs("span", { className: "text-sm text-gray-500 ml-2", children: ["/ ", duration] }))] }), onBook && (_jsx(Button, { onClick: () => onBook(id), children: "Book Now" }))] })] })] }));
+}
+//# sourceMappingURL=ServiceCard.js.map

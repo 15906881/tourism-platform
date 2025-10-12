@@ -1,0 +1,5 @@
+
+
+> @weblynk/tokens@0.0.1 build /Users/sadeshibeshi/tourism-platform/packages/tokens
+> mkdir -p dist && cp -f src/tokens.css dist/tokens.css
+
