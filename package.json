@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "dev": "pnpm -r dev",
-    "build": "turbo run build",
+    "build": "pnpm -r build",
     "test": "pnpm -r test",
     "lint": "eslint .",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
