@@ -1,0 +1,17 @@
+{
+  "/api/onboarding/register/route": "app/api/onboarding/register/route.js",
+  "/api/auth/signout/route": "app/api/auth/signout/route.js",
+  "/api/trpc/[trpc]/route": "app/api/trpc/[trpc]/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/onboarding/choose-template/page": "app/onboarding/choose-template/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/onboarding/choose-theme/page": "app/onboarding/choose-theme/page.js",
+  "/onboarding/choose-vertical/page": "app/onboarding/choose-vertical/page.js",
+  "/onboarding/business-info/page": "app/onboarding/business-info/page.js",
+  "/page": "app/page.js",
+  "/test-trpc/page": "app/test-trpc/page.js",
+  "/onboarding/payment/page": "app/onboarding/payment/page.js",
+  "/onboarding/sign-up/page": "app/onboarding/sign-up/page.js",
+  "/api/version/route": "app/api/version/route.js",
+  "/api/health/route": "app/api/health/route.js"
+}

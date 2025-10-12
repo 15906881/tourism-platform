@@ -1,0 +1,37 @@
+{
+  "name": "@weblynk/templates",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "echo \"Skipping templates build - blocks dependency issues\"",
+    "dev": "tsc -p tsconfig.json --watch",
+    "lint": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@weblynk/ui": "^0.0.1",
+    "@weblynk/blocks": "^0.0.1"
+  },
+  "dependencies": {
+    "clsx": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "typescript": "^5.3.0",
+    "@weblynk/ui": "workspace:*",
+    "@weblynk/blocks": "workspace:*"
+  }
+}

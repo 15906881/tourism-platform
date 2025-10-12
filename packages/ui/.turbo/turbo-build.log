@@ -1,0 +1,5 @@
+
+
+> @weblynk/ui@0.0.1 build /Users/sadeshibeshi/tourism-platform/packages/ui
+> tsc -p tsconfig.json && mkdir -p dist/styles && [ -f src/styles/a11y.css ] && cp -f src/styles/a11y.css dist/styles/a11y.css || true
+

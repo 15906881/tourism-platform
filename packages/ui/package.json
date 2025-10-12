@@ -1,0 +1,32 @@
+{
+  "name": "@weblynk/ui",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./styles/a11y.css": "./dist/styles/a11y.css"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && mkdir -p dist/styles && [ -f src/styles/a11y.css ] && cp -f src/styles/a11y.css dist/styles/a11y.css || true",
+    "dev": "tsc -p tsconfig.json --watch"
+  },
+  "devDependencies": {
+    "@types/node": "^24.7.2",
+    "@types/react": "^18.3.0",
+    "typescript": "^5.9.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@tanstack/react-table": "^8.21.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.0"
+  }
+}
