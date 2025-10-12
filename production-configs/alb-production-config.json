@@ -1,0 +1,54 @@
+{
+    "LoadBalancers": [
+        {
+            "LoadBalancerArn": "arn:aws:elasticloadbalancing:us-east-1:247006907925:loadbalancer/app/tourism-platform-alb/c6d85e0b7d945950",
+            "DNSName": "tourism-platform-alb-1238003240.us-east-1.elb.amazonaws.com",
+            "CanonicalHostedZoneId": "Z35SXDOTRQ7X7K",
+            "CreatedTime": "2025-09-27T02:30:35.476000+00:00",
+            "LoadBalancerName": "tourism-platform-alb",
+            "Scheme": "internet-facing",
+            "VpcId": "vpc-0d84b27dd4c9c32fe",
+            "State": {
+                "Code": "active"
+            },
+            "Type": "application",
+            "AvailabilityZones": [
+                {
+                    "ZoneName": "us-east-1e",
+                    "SubnetId": "subnet-04c089398814afa05",
+                    "LoadBalancerAddresses": []
+                },
+                {
+                    "ZoneName": "us-east-1d",
+                    "SubnetId": "subnet-06035bebd18599886",
+                    "LoadBalancerAddresses": []
+                },
+                {
+                    "ZoneName": "us-east-1b",
+                    "SubnetId": "subnet-0605d9b25cffeb7d3",
+                    "LoadBalancerAddresses": []
+                },
+                {
+                    "ZoneName": "us-east-1c",
+                    "SubnetId": "subnet-08630a52239bef5f4",
+                    "LoadBalancerAddresses": []
+                },
+                {
+                    "ZoneName": "us-east-1a",
+                    "SubnetId": "subnet-0b891fca9feed9b92",
+                    "LoadBalancerAddresses": []
+                },
+                {
+                    "ZoneName": "us-east-1f",
+                    "SubnetId": "subnet-0ec863959594c1e01",
+                    "LoadBalancerAddresses": []
+                }
+            ],
+            "SecurityGroups": [
+                "sg-002ab754090c0c481"
+            ],
+            "IpAddressType": "ipv4",
+            "EnablePrefixForIpv6SourceNat": "off"
+        }
+    ]
+}

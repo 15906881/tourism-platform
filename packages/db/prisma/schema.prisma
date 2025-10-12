@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id               String             @id @default(dbgenerated("public.uuid_generate_v4()")) @db.Uuid
+  name             String             @unique
+  created_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  hello            hello[]
+  leads            leads[]
+  listings         listings[]
+  media            media[]
+  memberships      Membership[]
+  sites            sites[]
+  tenant_templates tenant_templates[]
+  users            User[]
+
+  @@map("tenants")
+}
+
+model User {
+  id         String    @id @default(dbgenerated("public.uuid_generate_v4()")) @db.Uuid
+  tenant_id  String    @db.Uuid
+  email      String    @unique
+  role       String    @default("member")
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  tenants    Tenant    @relation(fields: [tenant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("users")
+}
+
+model Membership {
+  account_id String   @db.Uuid
+  tenant_id  String   @db.Uuid
+  role       String   @default("member")
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  accounts   accounts @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenants    Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([account_id, tenant_id])
+  @@map("memberships")
+}
+
+model AuditLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String?  @db.Uuid
+  user_id     String?  @db.Uuid
+  action      String
+  entity_type String?
+  entity_id   String?  @db.Uuid
+  old_values  Json?
+  new_values  Json?
+  ip_address  String?  @db.Inet
+  user_agent  String?
+  metadata    Json?    @default("{}")
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([action])
+  @@index([created_at(sort: Desc)])
+  @@index([entity_type, entity_id], map: "audit_logs_entity_idx")
+  @@index([tenant_id, created_at(sort: Desc)], map: "audit_logs_tenant_created_idx")
+  @@index([tenant_id])
+  @@index([user_id])
+  @@map("audit_logs")
+}
+
+model accounts {
+  id          String       @id @default(dbgenerated("public.uuid_generate_v4()")) @db.Uuid
+  email       String       @unique
+  created_at  DateTime     @default(now()) @db.Timestamptz(6)
+  memberships Membership[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model hello {
+  id         String   @id @default(dbgenerated("public.uuid_generate_v4()")) @db.Uuid
+  tenant_id  String   @db.Uuid
+  msg        String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  tenants    Tenant   @relation(fields: [tenant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([tenant_id], map: "hello_tenant_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model leads {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String    @db.Uuid
+  name        String
+  email       String
+  phone       String?
+  message     String?
+  subject     String?
+  source      String?   @default("contact_form")
+  page_url    String?
+  referrer    String?
+  listing_id  String?   @db.Uuid
+  status      String?   @default("new")
+  assigned_to String?   @db.Uuid
+  notes       String?
+  metadata    Json?     @default("{}")
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime  @default(now()) @db.Timestamptz(6)
+  listings    listings? @relation(fields: [listing_id], references: [id], onUpdate: NoAction)
+  tenants     Tenant    @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)])
+  @@index([email])
+  @@index([metadata], map: "leads_metadata_gin", type: Gin)
+  @@index([status])
+  @@index([tenant_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model listing_media {
+  listing_id String   @db.Uuid
+  media_id   String   @db.Uuid
+  position   Int      @default(0)
+  listings   listings @relation(fields: [listing_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  media      media    @relation(fields: [media_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([listing_id, media_id])
+  @@index([listing_id, position], map: "listing_media_by_listing")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model listings {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id         String          @db.Uuid
+  title             String
+  slug              String
+  description       String?
+  type              String          @default("service")
+  category          String?
+  price             Decimal?        @db.Decimal(10, 2)
+  currency          String?         @default("USD")
+  duration_minutes  Int?
+  capacity          Int?
+  is_bookable       Boolean?        @default(true)
+  featured_image_id String?         @db.Uuid
+  metadata          Json?           @default("{}")
+  status            String?         @default("draft")
+  published_at      DateTime?       @db.Timestamptz(6)
+  created_at        DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime        @default(now()) @db.Timestamptz(6)
+  leads             leads[]
+  listing_media     listing_media[]
+  media             media?          @relation(fields: [featured_image_id], references: [id], onUpdate: NoAction, map: "listings_featured_image_fkey")
+  tenants           Tenant          @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([tenant_id, slug])
+  @@index([featured_image_id], map: "listings_featured_image_idx")
+  @@index([metadata], map: "listings_metadata_gin", type: Gin)
+  @@index([status])
+  @@index([tenant_id])
+  @@index([tenant_id, type], map: "listings_tenant_type_idx")
+  @@index([type])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model media {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id         String          @db.Uuid
+  filename          String
+  original_filename String
+  mime_type         String
+  size_bytes        Int
+  s3_key            String
+  s3_bucket         String
+  cloudfront_url    String?
+  width             Int?
+  height            Int?
+  alt_text          String?
+  caption           String?
+  metadata          Json?           @default("{}")
+  uploaded_by       String?         @db.Uuid
+  created_at        DateTime        @default(now()) @db.Timestamptz(6)
+  listing_media     listing_media[]
+  listings          listings[]
+  tenants           Tenant          @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([tenant_id, s3_key])
+  @@index([created_at(sort: Desc)])
+  @@index([mime_type])
+  @@index([tenant_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pages {
+  id          String    @id @default(dbgenerated("public.uuid_generate_v4()")) @db.Uuid
+  site_id     String    @db.Uuid
+  template_id String    @db.Uuid
+  slug        String
+  overrides   Json      @default("{}")
+  published   Boolean   @default(false)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime  @default(now()) @db.Timestamptz(6)
+  sites       sites     @relation(fields: [site_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  templates   templates @relation(fields: [template_id], references: [id], onUpdate: NoAction)
+
+  @@unique([site_id, slug])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sites {
+  id         String   @id @default(dbgenerated("public.uuid_generate_v4()")) @db.Uuid
+  tenant_id  String   @db.Uuid
+  key        String
+  name       String
+  domain     String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  pages      pages[]
+  tenants    Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([tenant_id, key])
+}
+
+model templates {
+  id               String             @id @default(dbgenerated("public.uuid_generate_v4()")) @db.Uuid
+  key              String             @unique
+  name             String
+  category         String?
+  version          Int                @default(1)
+  content          Json               @default("{}")
+  created_at       DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime           @default(now()) @db.Timestamptz(6)
+  pages            pages[]
+  tenant_templates tenant_templates[]
+
+  @@index([category])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tenant_templates {
+  tenant_id   String    @db.Uuid
+  template_id String    @db.Uuid
+  enabled     Boolean   @default(true)
+  overrides   Json      @default("{}")
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime  @default(now()) @db.Timestamptz(6)
+  templates   templates @relation(fields: [template_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenants     Tenant    @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([tenant_id, template_id])
+}
+
+enum audit_action {
+  user_login          @map("user.login")
+  user_logout         @map("user.logout")
+  listing_created     @map("listing.created")
+  listing_updated     @map("listing.updated")
+  listing_deleted     @map("listing.deleted")
+  lead_created        @map("lead.created")
+  lead_status_changed @map("lead.status_changed")
+  site_published      @map("site.published")
+}

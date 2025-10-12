@@ -1,0 +1,61 @@
+{
+    "ScalingPolicies": [
+        {
+            "PolicyARN": "arn:aws:autoscaling:us-east-1:247006907925:scalingPolicy:09d51f05-a8b2-4974-a904-04fc9cfa0430:resource/ecs/service/tourism-platform-cluster/tourism-platform-svc:policyName/tourism-platform-req100",
+            "PolicyName": "tourism-platform-req100",
+            "ServiceNamespace": "ecs",
+            "ResourceId": "service/tourism-platform-cluster/tourism-platform-svc",
+            "ScalableDimension": "ecs:service:DesiredCount",
+            "PolicyType": "TargetTrackingScaling",
+            "TargetTrackingScalingPolicyConfiguration": {
+                "TargetValue": 100.0,
+                "PredefinedMetricSpecification": {
+                    "PredefinedMetricType": "ALBRequestCountPerTarget",
+                    "ResourceLabel": "app/tourism-platform-alb/c6d85e0b7d945950/targetgroup/tg-20250928172300774100000003/d2d0e4f00f346938"
+                },
+                "ScaleOutCooldown": 60,
+                "ScaleInCooldown": 60,
+                "DisableScaleIn": false
+            },
+            "Alarms": [
+                {
+                    "AlarmName": "TargetTracking-service/tourism-platform-cluster/tourism-platform-svc-AlarmHigh-d65b07ed-7148-4ed7-9df5-8fd8eaf83d0a",
+                    "AlarmARN": "arn:aws:cloudwatch:us-east-1:247006907925:alarm:TargetTracking-service/tourism-platform-cluster/tourism-platform-svc-AlarmHigh-d65b07ed-7148-4ed7-9df5-8fd8eaf83d0a"
+                },
+                {
+                    "AlarmName": "TargetTracking-service/tourism-platform-cluster/tourism-platform-svc-AlarmLow-530358c1-5e9c-456c-b7c5-6de1cf322cef",
+                    "AlarmARN": "arn:aws:cloudwatch:us-east-1:247006907925:alarm:TargetTracking-service/tourism-platform-cluster/tourism-platform-svc-AlarmLow-530358c1-5e9c-456c-b7c5-6de1cf322cef"
+                }
+            ],
+            "CreationTime": "2025-09-27T21:12:29.571000-06:00"
+        },
+        {
+            "PolicyARN": "arn:aws:autoscaling:us-east-1:247006907925:scalingPolicy:09d51f05-a8b2-4974-a904-04fc9cfa0430:resource/ecs/service/tourism-platform-cluster/tourism-platform-svc:policyName/tourism-platform-cpu50",
+            "PolicyName": "tourism-platform-cpu50",
+            "ServiceNamespace": "ecs",
+            "ResourceId": "service/tourism-platform-cluster/tourism-platform-svc",
+            "ScalableDimension": "ecs:service:DesiredCount",
+            "PolicyType": "TargetTrackingScaling",
+            "TargetTrackingScalingPolicyConfiguration": {
+                "TargetValue": 50.0,
+                "PredefinedMetricSpecification": {
+                    "PredefinedMetricType": "ECSServiceAverageCPUUtilization"
+                },
+                "ScaleOutCooldown": 60,
+                "ScaleInCooldown": 60,
+                "DisableScaleIn": false
+            },
+            "Alarms": [
+                {
+                    "AlarmName": "TargetTracking-service/tourism-platform-cluster/tourism-platform-svc-AlarmHigh-a17bfd03-2505-4c01-91bd-7c33f8a7aa04",
+                    "AlarmARN": "arn:aws:cloudwatch:us-east-1:247006907925:alarm:TargetTracking-service/tourism-platform-cluster/tourism-platform-svc-AlarmHigh-a17bfd03-2505-4c01-91bd-7c33f8a7aa04"
+                },
+                {
+                    "AlarmName": "TargetTracking-service/tourism-platform-cluster/tourism-platform-svc-AlarmLow-07787c9e-6b2e-4219-9e05-87ead5e81f77",
+                    "AlarmARN": "arn:aws:cloudwatch:us-east-1:247006907925:alarm:TargetTracking-service/tourism-platform-cluster/tourism-platform-svc-AlarmLow-07787c9e-6b2e-4219-9e05-87ead5e81f77"
+                }
+            ],
+            "CreationTime": "2025-09-27T21:12:29.277000-06:00"
+        }
+    ]
+}

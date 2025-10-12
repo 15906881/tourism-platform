@@ -1,21 +1,38 @@
 {
   "name": "tourism-platform",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
+  "packageManager": "pnpm@9.12.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "lint": "eslint . --ext .js,.ts --fix",
-    "lint:check": "eslint . --ext .js,.ts",
-    "format:check": "prettier --check \"**/*.{js,ts,json,yml,yaml}\"",
-    "format": "prettier --write \"**/*.{js,ts,json,yml,yaml}\"",
-    "db:migrate": "bash scripts/migrate.sh",
-    "db:init": "./scripts/db_init.sh",
-    "api:dev": "node api/server.js"
+    "dev": "pnpm -r dev",
+    "build": "turbo run build",
+    "test": "pnpm -r test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "test:e2e": "playwright test tests/e2e",
+    "test:a11y": "playwright test tests/a11y",
+    "test:all": "playwright test",
+    "typecheck": "pnpm -r exec tsc --noEmit",
+    "smoke:onboarding": "bash scripts/onboarding-smoke.sh http://localhost:3000",
+    "postinstall": "pnpm --filter @weblynk/db run db:generate || true"
   },
   "devDependencies": {
-    "@eslint/js": "^9.35.0",
-    "eslint": "^9.10.0",
-    "globals": "^15.0.0",
-    "markdownlint-cli": "^0.41.0",
-    "prettier": "^3.3.3"
+    "@axe-core/playwright": "^4.8.0",
+    "@playwright/test": "^1.40.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20.10.0"
+  },
+  "dependencies": {
+    "@trpc/client": "^10.45.2"
   }
 }

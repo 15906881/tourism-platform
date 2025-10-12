@@ -1,0 +1,343 @@
+# OpenAPI v1.0 - Production Refinements Applied
+
+## ✅ All Refinements Implemented
+
+### 1. Standard Headers (Rate Limiting & Tracing)
+
+**Added header components:**
+- `X-Request-Id` - Trace ID for request tracking
+- `RateLimit-Limit` - Max requests per window
+- `RateLimit-Remaining` - Remaining requests
+- `RateLimit-Reset` - Seconds until reset
+- `Idempotency-Key` - Echo of submitted key
+
+**Applied to:**
+- All GET responses (list endpoints)
+- All POST/PUT/PATCH responses
+- 429 Rate Limit response
+
+---
+
+### 2. Better HTTP Status Codes
+
+**Added `422 Unprocessable Entity`:**
+- For validation failures on semantically correct requests
+- Example: slug not unique, invalid module_payload structure
+- Distinct from `400 Bad Request` (malformed JSON, missing required fields)
+
+**Usage:**
+- POST/PUT/PATCH operations with body validation
+- Clear error details with field name and reason
+
+---
+
+### 3. Bot Abuse Protection
+
+**Added to `LeadInput` schema:**
+```yaml
+captcha_token:
+  type: string
+  description: Anti-bot token (e.g., reCAPTCHA v3, Cloudflare Turnstile)
+```
+
+**Implementation notes:**
+- Required for anonymous lead submissions
+- Optional for authenticated users (lower abuse risk)
+- Server validates token with provider before accepting lead
+
+---
+
+### 4. Advanced Filtering on List Endpoints
+
+**Listings (`GET /tenants/{tenantId}/listings`):**
+- `module` - Filter by vertical (hotel, salon, tour, restaurant)
+- `updated_after` - Filter by update timestamp (datetime)
+- `updated_before` - Filter by update timestamp (datetime)
+
+**Leads (`GET /tenants/{tenantId}/leads`):**
+- `created_after` - Filter by creation timestamp
+- `created_before` - Filter by creation timestamp
+
+**Benefits:**
+- Dashboard date range filtering
+- "Show me changes this week" queries
+- Vertical-specific views
+
+---
+
+### 5. Media Upload Error Handling
+
+**Added explicit responses:**
+- `413 Payload Too Large` - File exceeds size limit (e.g., 10MB)
+- `415 Unsupported Media Type` - Wrong file type (only JPEG/PNG/WebP allowed)
+
+**Error details include:**
+- `max_size_mb` for 413
+- `allowed_types` array for 415
+
+---
+
+### 6. Response Examples & Consistency
+
+**Added `examples` section with:**
+- `ListingExample` - Full hotel listing with module_payload
+- `LeadExample` - New web lead with contact info
+
+**Applied to:**
+- POST /listings 201 response
+- GET /listings 200 response  
+- GET /leads 200 response (with pagination example)
+
+**Benefits:**
+- Frontend developers see exact response shapes
+- Reduces integration guesswork
+- Auto-generates SDK mock data
+
+---
+
+### 7. Member Ownership Enforcement
+
+**Updated PATCH /listings documentation:**
+- Summary explicitly states: "members can only edit own listings via created_by check"
+- Added specific 403 error example:
+  ```json
+  {
+    "error": "Insufficient permissions",
+    "code": "FORBIDDEN",
+    "details": {
+      "reason": "member_cannot_edit_others_listing"
+    }
+  }
+  ```
+
+**Implementation guidance:**
+- Backend checks `listing.created_by === jwt.sub` for member role
+- Clear error message for debugging
+
+---
+
+### 8. Webhooks (Future-Proof)
+
+**Added `x-webhooks` section:**
+- `lead.created` - Triggered when new lead submitted
+- `listing.published` - Triggered when listing goes live
+
+**Webhook payload structure:**
+```json
+{
+  "event": "lead.created",
+  "timestamp": "2025-09-28T23:35:00Z",
+  "data": { /* full Lead object */ }
+}
+```
+
+**Benefits:**
+- Documents future event system
+- Tenants can subscribe to events (Phase 7+)
+- Integration with Zapier, Make, etc.
+
+---
+
+### 9. Additional Improvements
+
+**Cursor-based pagination support:**
+- Added optional `next_cursor` field to `PaginatedResponse`
+- Allows future migration from offset to cursor pagination
+- Better performance for large datasets
+
+**Better validation:**
+- `ListingInput.slug` pattern validation documented
+- `LeadInput.payload_json.message` max length (2000 chars)
+- Email format validation
+
+**Response headers on all endpoints:**
+- Consistent rate limiting info
+- Request tracing with X-Request-Id
+- Idempotency confirmation on mutations
+
+---
+
+## 📋 Implementation Checklist
+
+### Backend Implementation
+- [ ] Implement rate limiting (sliding window, 1000 req/hr default)
+- [ ] Add `X-Request-Id` generation middleware (UUID v4)
+- [ ] Implement idempotency key handling (24hr cache)
+- [ ] Add captcha validation for anonymous lead submissions
+- [ ] Implement date range filters on listings/leads queries
+- [ ] Add media file size/type validation (10MB, JPEG/PNG/WebP)
+- [ ] Create webhook event emitter (for Phase 7+)
+
+### Error Handling
+- [ ] Distinguish 400 (malformed) vs 422 (validation failed)
+- [ ] Include field names in validation errors
+- [ ] Add detailed error codes (VALIDATION_ERROR, FORBIDDEN, etc.)
+- [ ] Log errors with X-Request-Id for debugging
+
+### Frontend Integration
+- [ ] Generate TypeScript SDK from OpenAPI spec (openapi-generator)
+- [ ] Use examples for mock data during development
+- [ ] Display rate limit info in dev tools
+- [ ] Implement retry logic with Idempotency-Key
+- [ ] Handle 413/415 errors with user-friendly messages
+
+### Testing
+- [ ] Test rate limiting (verify headers, 429 response)
+- [ ] Test idempotency (duplicate POST with same key)
+- [ ] Test date range filters (listings updated_after/before)
+- [ ] Test captcha validation (valid/invalid/missing tokens)
+- [ ] Test media upload errors (oversized, wrong type)
+- [ ] Test member ownership (403 when editing others' listings)
+
+---
+
+## 🎯 Phase 1 Task #2 Status
+
+**✅ COMPLETE - OpenAPI v1.0 Production-Ready**
+
+### What's Included
+
+**Core Functionality:**
+- Authentication & user management (JWT, multi-tenant switching)
+- Tenant management (get, invite users)
+- Listings CRUD (with ownership enforcement)
+- Media upload (with validation)
+- Leads management (public + authenticated)
+- Site configuration (templates + theming)
+- Templates catalog (public)
+
+**Production Features:**
+- Rate limiting with standardized headers
+- Request tracing (X-Request-Id)
+- Idempotency support (safe retries)
+- Comprehensive error handling (400/403/404/409/413/415/422/429)
+- Bot abuse protection (captcha)
+- Advanced filtering (date ranges, modules, status)
+- Pagination with cursor support
+- Response examples
+- Webhook documentation (future)
+
+**Documentation Quality:**
+- Clear descriptions for all endpoints
+- Auth flow explained
+- Multi-tenancy behavior documented
+- Validation rules specified
+- Error responses with examples
+- Tags for API organization
+- Operation IDs for code generation
+
+---
+
+## 📦 Files Ready
+
+### Updated
+- `docs/openapi-v1.yaml` ✅ (production-grade spec)
+
+### Supporting Docs
+- `docs/domain-model.md` ✅
+- `docs/auth-rbac.md` ✅
+- `migrations/001_initial_schema.sql` ✅
+- `migrations/002_user_invites.sql` ✅
+
+---
+
+## 🚀 Next Steps
+
+### Immediate (Phase 1 Completion)
+1. **Generate server stubs** from OpenAPI spec
+   ```bash
+   npx @openapitools/openapi-generator-cli generate \
+     -i docs/openapi-v1.yaml \
+     -g nodejs-express-server \
+     -o backend/generated
+   ```
+
+2. **Generate TypeScript client** for frontend
+   ```bash
+   npx @openapitools/openapi-generator-cli generate \
+     -i docs/openapi-v1.yaml \
+     -g typescript-axios \
+     -o frontend/src/api/generated
+   ```
+
+3. **Set up API documentation hosting**
+   - Use Redoc or Swagger UI
+   - Host at `https://docs.weblynk.app`
+   - Keep spec in sync with implementation
+
+### Phase 2 (BFFs)
+4. **Implement BFF-Tenant endpoints** using OpenAPI spec as contract
+5. **Add contract tests** (Pact or similar) to verify BFF matches spec
+6. **Implement rate limiting middleware** with Redis
+7. **Add idempotency middleware** with 24hr TTL cache
+
+### Phase 3 (Testing)
+8. **Create Postman/Insomnia collection** from OpenAPI spec
+9. **Write integration tests** for critical paths
+10. **Load test** rate limiting thresholds
+
+---
+
+## 💡 Pro Tips
+
+### For Backend Devs
+- **Use the spec as source of truth** - don't hand-code routes
+- **Validate requests** against OpenAPI schemas (ajv, joi)
+- **Generate API docs** automatically from spec (no drift)
+- **Contract testing** ensures BFF matches OpenAPI spec
+
+### For Frontend Devs
+- **Generate typed client** from spec (TypeScript safety)
+- **Use examples** for mock data in Storybook
+- **Implement retry logic** with exponential backoff + Idempotency-Key
+- **Show rate limit info** in dev tools for debugging
+
+### For QA
+- **Import OpenAPI spec** into Postman for testing
+- **Test all error codes** (not just happy path)
+- **Verify rate limiting** doesn't break legitimate usage
+- **Test edge cases** from schema constraints (maxLength, pattern)
+
+---
+
+## 📊 API Metrics to Track
+
+Once implemented, monitor:
+- **Request rate** by endpoint (identify hot paths)
+- **Error rate** by code (422 = validation issues, 403 = permission bugs)
+- **P95 latency** (should be < 200ms for most endpoints)
+- **Rate limit hits** (429s = need to increase limits or optimize clients)
+- **Idempotency cache hit rate** (retries vs unique requests)
+
+---
+
+## 🔒 Security Checklist
+
+Before going live:
+- [ ] JWT validation enforces `aud` and `iss`
+- [ ] Rate limiting per tenant/user (not just global)
+- [ ] Captcha validation on anonymous lead submissions
+- [ ] File upload size/type validation (prevent DOS)
+- [ ] SQL injection protection (parameterized queries)
+- [ ] CORS properly configured (whitelist origins)
+- [ ] HTTPS enforced (redirect HTTP → HTTPS)
+- [ ] Sensitive data not in logs (PII, tokens)
+- [ ] Error messages don't leak internal details
+
+---
+
+## 🎉 Summary
+
+Your OpenAPI v1.0 spec is now **production-ready** with:
+- ✅ All agent recommendations applied
+- ✅ Enterprise-grade error handling
+- ✅ Rate limiting & tracing
+- ✅ Idempotency support
+- ✅ Bot protection
+- ✅ Advanced filtering
+- ✅ Webhook documentation
+- ✅ Comprehensive examples
+
+**Phase 1 Task #2 = COMPLETE**
+
+Next up: Vertical plugin schemas (Task #3) or jump to BFF implementation (Phase 2)?

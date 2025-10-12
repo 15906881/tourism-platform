@@ -1,0 +1,130 @@
+=== TOURISM PLATFORM ANALYSIS ===
+/Users/sadeshibeshi/tourism-platform
+
+## MONOREPO STRUCTURE
+apps/:
+total 0
+drwxr-xr-x   8 sadeshibeshi  staff   256 29 Sep 14:58 .
+drwxr-xr-x  53 sadeshibeshi  staff  1696  3 Oct 21:25 ..
+-rw-r--r--   1 sadeshibeshi  staff     0 17 Sep 20:39 .gitkeep
+drwxr-xr-x  13 sadeshibeshi  staff   416  3 Oct 18:40 admin
+drwxr-xr-x   4 sadeshibeshi  staff   128 17 Sep 20:39 onboarding
+drwxr-xr-x   4 sadeshibeshi  staff   128 17 Sep 20:39 photos-entry
+drwxr-xr-x  13 sadeshibeshi  staff   416  3 Oct 18:40 site-renderer
+drwxr-xr-x  19 sadeshibeshi  staff   608  3 Oct 17:00 tenant-dashboard
+
+packages/:
+total 0
+drwxr-xr-x  10 sadeshibeshi  staff   320  3 Oct 06:56 .
+drwxr-xr-x  53 sadeshibeshi  staff  1696  3 Oct 21:25 ..
+drwxr-xr-x   3 sadeshibeshi  staff    96 29 Sep 14:58 api-client
+drwxr-xr-x   7 sadeshibeshi  staff   224  3 Oct 17:45 auth
+drwxr-xr-x   7 sadeshibeshi  staff   224  3 Oct 17:00 blocks
+drwxr-xr-x  13 sadeshibeshi  staff   416  3 Oct 17:00 db
+drwxr-xr-x   7 sadeshibeshi  staff   224  3 Oct 18:45 server
+drwxr-xr-x   7 sadeshibeshi  staff   224  3 Oct 17:00 templates
+drwxr-xr-x   3 sadeshibeshi  staff    96 29 Sep 17:41 tokens
+drwxr-xr-x  11 sadeshibeshi  staff   352  3 Oct 18:40 ui
+
+web/:
+total 384
+drwxr-xr-x  12 sadeshibeshi  staff     384 28 Sep 18:58 .
+drwxr-xr-x  53 sadeshibeshi  staff    1696  3 Oct 21:25 ..
+-rw-r--r--   1 sadeshibeshi  staff      23 25 Sep 06:36 .dockerignore
+-rw-r--r--   1 sadeshibeshi  staff      33 25 Sep 06:36 .eslintignore
+-rw-r--r--   1 sadeshibeshi  staff     340 25 Sep 06:36 .eslintrc.cjs
+-rw-r--r--   1 sadeshibeshi  staff       0 17 Sep 20:39 .gitkeep
+-rw-r--r--   1 sadeshibeshi  staff     284 25 Sep 06:36 Dockerfile
+-rw-r--r--   1 sadeshibeshi  staff     303 24 Sep 10:46 index.html
+-rw-r--r--   1 sadeshibeshi  staff  164292 26 Sep 06:11 package-lock.json
+-rw-r--r--   1 sadeshibeshi  staff     630 26 Sep 06:11 package.json
+drwxr-xr-x   4 sadeshibeshi  staff     128 28 Sep 18:58 src
+-rw-r--r--   1 sadeshibeshi  staff     180 24 Sep 10:46 vite.config.js
+apps/admin/package.json
+apps/tenant-dashboard/package.json
+apps/site-renderer/package.json
+packages/blocks/package.json
+packages/ui/package.json
+packages/auth/package.json
+packages/server/package.json
+packages/db/package.json
+packages/templates/package.json
+web/package.json
+
+## TOKENS & TAILWIND
+./packages/tokens/themes/luxury.json
+
+## COMPONENTS & RADIX/SHADCN
+
+## TABLE STACK
+
+## ACCESSIBILITY
+apps//admin/app/page.tsx:62:            aria-hidden
+apps//admin/app/page.tsx:77:            aria-hidden
+apps//admin/app/page.tsx:92:            aria-hidden
+apps//tenant-dashboard/node_modules/csstype/index.d.ts:18462:  | ":focus-visible"
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2608:    // All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2611:        "aria-activedescendant"?: string | undefined;
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2612:        /** Indicates whether assistive technologies will present all, or only parts of, the changed region based on the change notifications defined by the aria-relevant attribute. */
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2613:        "aria-atomic"?: Booleanish | undefined;
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2618:        "aria-autocomplete"?: "none" | "inline" | "list" | "both" | undefined;
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2622:         * @see aria-label.
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2624:        "aria-braillelabel"?: string | undefined;
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2627:         * @see aria-roledescription.
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2629:        "aria-brailleroledescription"?: string | undefined;
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2630:        "aria-busy"?: Booleanish | undefined;
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2633:         * @see aria-pressed @see aria-selected.
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2635:        "aria-checked"?: boolean | "false" | "mixed" | "true" | undefined;
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2638:         * @see aria-colindex.
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2640:        "aria-colcount"?: number | undefined;
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2643:         * @see aria-colcount @see aria-colspan.
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2645:        "aria-colindex"?: number | undefined;
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2647:         * Defines a human readable text alternative of aria-colindex.
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2648:         * @see aria-rowindextext.
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2650:        "aria-colindextext"?: string | undefined;
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2653:         * @see aria-colindex @see aria-rowspan.
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2655:        "aria-colspan"?: number | undefined;
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2658:         * @see aria-owns.
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2660:        "aria-controls"?: string | undefined;
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2662:        "aria-current"?: boolean | "false" | "true" | "page" | "step" | "location" | "date" | "time" | undefined;
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2665:         * @see aria-labelledby
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:2667:        "aria-describedby"?: string | undefined;
+
+## MOTION
+apps//tenant-dashboard/node_modules/.ignored/typescript/lib/lib.dom.d.ts:1773:    playoutId?: string;
+packages//ui/styles/luxury.css:391:@media (prefers-reduced-motion: reduce) {
+
+## PERFORMANCE
+apps//tenant-dashboard/node_modules/.ignored/@types/node/vm.d.ts:74:         * [Support of dynamic `import()` in compilation APIs](https://nodejs.org/docs/latest-v20.x/api/vm.html#support-of-dynamic-import-in-compilation-apis).
+apps//tenant-dashboard/node_modules/.ignored/@types/node/vm.d.ts:125:         * [Support of dynamic `import()` in compilation APIs](https://nodejs.org/docs/latest-v22.x/api/vm.html#support-of-dynamic-import-in-compilation-apis).
+apps//tenant-dashboard/node_modules/.ignored/@types/node/vm.d.ts:140:         * [Support of dynamic `import()` in compilation APIs](https://nodejs.org/docs/latest-v22.x/api/vm.html#support-of-dynamic-import-in-compilation-apis).
+apps//tenant-dashboard/node_modules/.ignored/@types/node/vm.d.ts:168:         * [Support of dynamic `import()` in compilation APIs](https://nodejs.org/docs/latest-v22.x/api/vm.html#support-of-dynamic-import-in-compilation-apis).
+apps//tenant-dashboard/node_modules/.ignored/@types/node/vm.d.ts:211:         * [Support of dynamic `import()` in compilation APIs](https://nodejs.org/docs/latest-v22.x/api/vm.html#support-of-dynamic-import-in-compilation-apis).
+apps//tenant-dashboard/node_modules/.ignored/@types/node/vm.d.ts:911:         * [Support of dynamic `import()` in compilation APIs](https://nodejs.org/docs/latest-v22.x/api/vm.html#support-of-dynamic-import-in-compilation-apis).
+apps//tenant-dashboard/node_modules/.ignored/@types/node/vm.d.ts:1009:         * For detailed information, see [Support of dynamic `import()` in compilation APIs](https://nodejs.org/docs/latest-v20.x/api/vm.html#support-of-dynamic-import-in-compilation-apis).
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:858:        /** A fallback react tree to show when a Suspense child (like React.lazy) suspends */
+apps//tenant-dashboard/node_modules/.ignored/@types/react/ts5.0/index.d.ts:4361:        // let's assume it's reasonable to do a single React.lazy() around a single React.memo() / vice-versa
+apps//tenant-dashboard/node_modules/.ignored/@types/react/index.d.ts:857:        /** A fallback react tree to show when a Suspense child (like React.lazy) suspends */
+apps//tenant-dashboard/node_modules/.ignored/@types/react/index.d.ts:4374:        // let's assume it's reasonable to do a single React.lazy() around a single React.memo() / vice-versa
+apps//tenant-dashboard/node_modules/.ignored/next/dist/server/load-components.d.ts:18: * each dynamic imports.
+apps//tenant-dashboard/node_modules/.ignored/next/dist/shared/lib/dynamic.d.ts:36: * This function lets you dynamically import a component.
+apps//tenant-dashboard/node_modules/.ignored/next/dist/shared/lib/dynamic.d.ts:37: * It uses [React.lazy()](https://react.dev/reference/react/lazy) with [Suspense](https://react.dev/reference/react/Suspense) under the hood.
+apps//tenant-dashboard/node_modules/.ignored/next/dist/build/webpack-config.d.ts:125:        dynamicFilter: ReturnType<import('../shared/lib/bloom-filter').BloomFilter['export']>;
+
+## TESTING & QA
+apps//tenant-dashboard/node_modules/.ignored/next/experimental/testmode/playwright/msw.d.ts:1:export * from '../../../dist/experimental/testmode/playwright/msw'
+apps//tenant-dashboard/node_modules/.ignored/next/experimental/testmode/playwright.d.ts:1:export * from '../../dist/experimental/testmode/playwright'
+apps//tenant-dashboard/node_modules/.ignored/next/dist/experimental/testmode/playwright/msw.d.ts:5:export * from '@playwright/test';
+apps//tenant-dashboard/node_modules/.ignored/next/dist/experimental/testmode/playwright/msw.d.ts:11:export declare const test: import("@playwright/test").TestType<import("@playwright/test").PlaywrightTestArgs & import("@playwright/test").PlaywrightTestOptions & {
+apps//tenant-dashboard/node_modules/.ignored/next/dist/experimental/testmode/playwright/msw.d.ts:17:}, import("@playwright/test").PlaywrightWorkerArgs & import("@playwright/test").PlaywrightWorkerOptions & {
+apps//tenant-dashboard/node_modules/.ignored/next/dist/experimental/testmode/playwright/report.d.ts:1:import type { TestInfo } from '@playwright/test';
+apps//tenant-dashboard/node_modules/.ignored/next/dist/experimental/testmode/playwright/step.d.ts:1:import type { TestInfo } from '@playwright/test';
+apps//tenant-dashboard/node_modules/.ignored/next/dist/experimental/testmode/playwright/page-route.d.ts:1:import type { Page, Route } from '@playwright/test';
+apps//tenant-dashboard/node_modules/.ignored/next/dist/experimental/testmode/playwright/index.d.ts:1:import * as base from '@playwright/test';
+apps//tenant-dashboard/node_modules/.ignored/next/dist/experimental/testmode/playwright/index.d.ts:5:export * from '@playwright/test';
+apps//tenant-dashboard/node_modules/.ignored/next/dist/experimental/testmode/playwright/next-fixture.d.ts:1:import type { Page, TestInfo } from '@playwright/test';
+
+## SUMMARY
+Apps:        6 directories
+Packages:        9 directories
+Web:        2 directories

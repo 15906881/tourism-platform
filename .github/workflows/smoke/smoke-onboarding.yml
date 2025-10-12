@@ -1,0 +1,92 @@
+name: Smoke – Onboarding
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - "apps/tenant-dashboard/**"
+      - "packages/server/**"
+      - "scripts/onboarding-smoke.sh"
+      - ".github/workflows/smoke-onboarding.yml"
+      - "pnpm-lock.yaml"
+      - "package.json"
+  pull_request:
+    paths:
+      - "apps/tenant-dashboard/**"
+      - "packages/server/**"
+      - "scripts/onboarding-smoke.sh"
+      - ".github/workflows/smoke-onboarding.yml"
+      - "pnpm-lock.yaml"
+      - "package.json"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Keep the app in stub mode for CI
+      ONBOARDING_BACKEND: stub
+      DEBUG_ONBOARDING: "0"
+      # Pulled from GitHub → Settings → Secrets and variables → Actions
+      ONBOARDING_SIGNING_SECRET: ${{ secrets.ONBOARDING_SIGNING_SECRET }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Write .env.local for tenant-dashboard
+        run: |
+          cat > apps/tenant-dashboard/.env.local <<'EOF'
+          ONBOARDING_BACKEND=stub
+          DEBUG_ONBOARDING=0
+          ONBOARDING_SIGNING_SECRET=${{ secrets.ONBOARDING_SIGNING_SECRET }}
+          EOF
+
+      - name: Build tenant-dashboard only
+        run: pnpm -C apps/tenant-dashboard build
+
+      - name: Start tenant-dashboard (background)
+        run: |
+          pnpm -C apps/tenant-dashboard start &
+          echo $! > .next-server.pid
+
+      - name: Wait for http://localhost:3000
+        run: |
+          for i in {1..60}; do
+            if curl -sf http://localhost:3000/api/health >/dev/null 2>&1; then
+              echo "Server is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Server did not become ready in time" >&2
+          exit 1
+
+      - name: Run onboarding smoke test
+        run: pnpm smoke:onboarding
+
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          echo "PID:" $(cat .next-server.pid || true)
+          lsof -i :3000 || true
+          # Print any server logs if you have them
+          find apps/tenant-dashboard/.next -type f -maxdepth 3 -print 2>/dev/null | sed -n '1,200p'
+
+      - name: Stop server
+        if: always()
+        run: kill -9 $(cat .next-server.pid) 2>/dev/null || true

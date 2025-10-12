@@ -1,3 +1,17 @@
+# Global owners - all new monorepo structure
 * @CRAN2025
+
+# Frontend apps (new)
+/apps/site-renderer/ @CRAN2025
+/apps/tenant-dashboard/ @CRAN2025
+/apps/admin/ @CRAN2025
+
+# Shared packages (new)
+/packages/ui/ @CRAN2025
+/packages/db/ @CRAN2025
+/packages/blocks/ @CRAN2025
+/packages/templates/ @CRAN2025
+
+# Existing entries (keep these)
 /docs/** @CRAN2025
 /database/** @CRAN2025

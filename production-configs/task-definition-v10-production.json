@@ -1,0 +1,104 @@
+{
+    "taskDefinition": {
+        "taskDefinitionArn": "arn:aws:ecs:us-east-1:247006907925:task-definition/tourism-platform:10",
+        "containerDefinitions": [
+            {
+                "name": "tourism-platform",
+                "image": "247006907925.dkr.ecr.us-east-1.amazonaws.com/tourism-platform/api:develop",
+                "cpu": 0,
+                "portMappings": [
+                    {
+                        "containerPort": 8000,
+                        "hostPort": 8000,
+                        "protocol": "tcp"
+                    }
+                ],
+                "essential": true,
+                "environment": [],
+                "mountPoints": [],
+                "volumesFrom": [],
+                "secrets": [
+                    {
+                        "name": "APP_DB_URL",
+                        "valueFrom": "arn:aws:secretsmanager:us-east-1:247006907925:secret:/tourism-platform/dev/app-db-url-OvuapH"
+                    }
+                ],
+                "logConfiguration": {
+                    "logDriver": "awslogs",
+                    "options": {
+                        "awslogs-group": "/ecs/tourism-platform",
+                        "awslogs-region": "us-east-1",
+                        "awslogs-stream-prefix": "tourism-platform"
+                    }
+                },
+                "healthCheck": {
+                    "command": [
+                        "CMD-SHELL",
+                        "curl -fsS http://127.0.0.1:8000/health || exit 1"
+                    ],
+                    "interval": 10,
+                    "timeout": 5,
+                    "retries": 10,
+                    "startPeriod": 120
+                },
+                "systemControls": []
+            }
+        ],
+        "family": "tourism-platform",
+        "taskRoleArn": "arn:aws:iam::247006907925:role/tourism-platform-task-role",
+        "executionRoleArn": "arn:aws:iam::247006907925:role/tourism-platform-task-exec",
+        "networkMode": "awsvpc",
+        "revision": 10,
+        "volumes": [],
+        "status": "ACTIVE",
+        "requiresAttributes": [
+            {
+                "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+            },
+            {
+                "name": "ecs.capability.execution-role-awslogs"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.ecr-auth"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+            },
+            {
+                "name": "ecs.capability.secrets.asm.environment-variables"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.task-iam-role"
+            },
+            {
+                "name": "ecs.capability.container-health-check"
+            },
+            {
+                "name": "ecs.capability.execution-role-ecr-pull"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+            },
+            {
+                "name": "ecs.capability.task-eni"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
+            }
+        ],
+        "placementConstraints": [],
+        "compatibilities": [
+            "EC2",
+            "FARGATE",
+            "MANAGED_INSTANCES"
+        ],
+        "requiresCompatibilities": [
+            "FARGATE"
+        ],
+        "cpu": "1024",
+        "memory": "2048",
+        "registeredAt": "2025-09-28T17:26:59.574000-06:00",
+        "registeredBy": "arn:aws:iam::247006907925:user/tourism-admin"
+    },
+    "tags": []
+}

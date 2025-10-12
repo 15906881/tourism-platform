@@ -1,0 +1,11 @@
+**/node_modules
+**/.terraform
+**/.git
+**/.next
+**/dist
+**/build
+infra/
+archive/
+.backup/
+*.log
+*.tar.gz
