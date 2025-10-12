@@ -30,7 +30,7 @@
     "typescript": "^5.9.3"
   },
   "engines": {
-    "node": ">=20.10.0"
+    "node": ">=18.18.0 <21"
   },
   "dependencies": {
     "@trpc/client": "^10.45.2"
