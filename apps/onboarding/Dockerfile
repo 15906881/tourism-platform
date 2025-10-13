@@ -1,33 +1,42 @@
 FROM node:18-alpine AS base
-ARG APP=onboarding
 RUN apk add --no-cache libc6-compat
 RUN npm install -g pnpm
+ARG app=onboarding
 
 FROM base AS deps
 WORKDIR /app
+ARG app
 COPY package.json pnpm-lock.yaml* .npmrc* ./
-COPY apps/onboarding/package.json ./apps/onboarding/
+COPY apps/$app/package.json ./apps/$app/
+COPY packages/ui/package.json ./packages/ui/
 RUN pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
-COPY . .
+ARG app
+COPY package.json pnpm-lock.yaml* .npmrc* ./
+COPY apps/$app/ ./apps/$app/
+COPY packages/ ./packages/
 COPY --from=deps /app/node_modules ./node_modules
-ENV NEXT_TELEMETRY_DISABLED 1
-RUN pnpm -C apps/${APP} build
+
+RUN pnpm --filter @weblynk/ui build
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN pnpm --filter $app build
 
 FROM base AS runner
 WORKDIR /app
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+ARG app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=builder /app/apps/onboarding/public ./apps/onboarding/public
-COPY --from=builder --chown=nextjs:nodejs /app/apps/onboarding/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/onboarding/.next/static ./apps/onboarding/.next/static
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser --system --uid 1001 nextjs
+
+COPY --from=builder --chown=nextjs:nodejs /app/apps/$app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/$app/.next/static ./apps/$app/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/$app/public ./apps/$app/public
 
 USER nextjs
-EXPOSE 3003
-ENV PORT 3003
-CMD ["node", "apps/onboarding/server.js"]
+EXPOSE 8000
+ENV PORT=8000
+CMD ["node", "server.js"]
