@@ -12,7 +12,8 @@
     "db:init": "./scripts/db_init.sh",
     "api:dev": "node api/server.js",
     "build": "pnpm -r build",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "test:env": "./scripts/test/env-smoke-test.sh"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.8.0",
