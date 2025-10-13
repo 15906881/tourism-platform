@@ -9,15 +9,6 @@ const app = express();
 app.use(express.json());
 
 // Simple health with DB check
-<<<<<<< HEAD
-app.get("/health", (_req, res) => {
-  res.status(200).json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
-=======
 app.get("/health", async (req, res) => {
   try {
     const { rows } = await pool.query("select version() as v");
@@ -27,7 +18,6 @@ app.get("/health", async (req, res) => {
   }
 });
 
->>>>>>> e4926a386fcff0470f18dd5ec171a2e5691666d9
 // GET /users?tenant=demo  (or header X-Tenant: demo)
 app.get("/users", async (req, res) => {
   const tenantName = req.query.tenant || req.header("X-Tenant");
