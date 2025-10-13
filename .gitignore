@@ -7,3 +7,6 @@ node_modules/
 # Workflow backup files
 .github/workflows/*.backup
 .github/workflows/*.save
+.env
+.env.local
+.env.*.local
