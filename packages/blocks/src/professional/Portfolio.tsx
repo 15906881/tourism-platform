@@ -1,3 +1,4 @@
+import { getId } from "../util/getId";
 "use client";
 
 import React from 'react';
@@ -60,7 +61,7 @@ export function Portfolio({ items, columns = 3, showFilters = true, className }:
         <div className={clsx('grid gap-6', gridCols[columns])}>
           {filteredItems.map((item) => (
             <div
-              key={item.id}
+              key={getId(item)}
               className="group bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
             >
               <div className="relative h-48 overflow-hidden">

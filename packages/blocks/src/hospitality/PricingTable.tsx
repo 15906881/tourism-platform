@@ -1,3 +1,4 @@
+import { getId } from "../util/getId";
 import React from 'react';
 import { Button } from '@weblynk/ui';
 import { clsx } from 'clsx';
@@ -34,7 +35,7 @@ export function PricingTable({ tiers, className }: PricingTableProps) {
         )}>
           {tiers.map((tier) => (
             <div
-              key={tier.id}
+              key={getId(tier)}
               className={clsx(
                 'bg-white rounded-lg p-8 transition-all',
                 tier.highlighted
@@ -74,7 +75,7 @@ export function PricingTable({ tiers, className }: PricingTableProps) {
               {tier.onSelect && (
                 <Button
                   variant={tier.highlighted ? 'primary' : 'secondary'}
-                  onClick={() => tier.onSelect!(tier.id)}
+                  onClick={() => tier.onSelect!(getId(tier))}
                   className="w-full"
                 >
                   {tier.ctaText || 'Select'}
