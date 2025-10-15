@@ -4,6 +4,10 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Experimental: Disable CSS optimization to avoid PostCSS issues
+  experimental: {
+    optimizeCss: false,
+  },
   async rewrites() {
     return [
       {
