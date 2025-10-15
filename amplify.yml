@@ -9,7 +9,7 @@ frontend:
       commands:
         - pnpm -F site-renderer build
   artifacts:
-    baseDirectory: apps/site-renderer/.next
+    baseDirectory: apps/site-renderer
     files:
       - '**/*'
   cache:
