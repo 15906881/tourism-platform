@@ -1,0 +1,23 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm install 20
+        - nvm use 20
+        - corepack enable
+        - corepack prepare pnpm@9.12.0 --activate
+        # Clear any cached node_modules that might have wrong dependencies
+        - rm -rf node_modules apps/site-renderer/node_modules
+        - pnpm install --frozen-lockfile
+    build:
+      commands:
+        - pnpm -F site-renderer build
+  artifacts:
+    baseDirectory: apps/site-renderer
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - apps/site-renderer/.next/cache/**/*
