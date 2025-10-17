@@ -46,3 +46,8 @@ packages/*/.env*
 # --- end onboarding/env ignores ---
 .vercel
 playwright-report/
+
+# Playwright artifacts
+playwright-report/
+playwright/.cache/
+**/test-results/
