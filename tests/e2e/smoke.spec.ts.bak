@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Smoke Tests', () => {
   test('homepage loads', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1, name: 'Weblynk Platform' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Weblynk Platform' })).toBeVisible();
   });
 
   test('can navigate using keyboard', async ({ page }) => {

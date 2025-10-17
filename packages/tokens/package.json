@@ -17,7 +17,7 @@
     "src"
   ],
   "scripts": {
-    "build": "mkdir -p dist && cp -f src/tokens.css dist/tokens.css",
+    "build": "node scripts/build-tokens.js",
     "dev": "node scripts/build-tokens.js --watch"
   }
 }

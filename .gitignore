@@ -45,3 +45,4 @@ packages/*/.env*
 !**/.env*.example
 # --- end onboarding/env ignores ---
 .vercel
+playwright-report/

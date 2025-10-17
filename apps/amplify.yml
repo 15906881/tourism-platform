@@ -7,10 +7,12 @@ frontend:
         - nvm use 20
         - corepack enable
         - corepack prepare pnpm@9.12.0 --activate
+        # COMPLETELY clear all caches
+        - rm -rf node_modules */*/node_modules */.next
         - pnpm install --frozen-lockfile
     build:
       commands:
-        - pnpm -F site-renderer build
+        - cd apps/site-renderer && pnpm build
   artifacts:
     baseDirectory: apps/site-renderer
     files:

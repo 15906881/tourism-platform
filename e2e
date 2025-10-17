@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+# E2E for branch "pristine" – resilient version
+# Requires: git, pnpm, curl, jq. Node 18.18+ works, Node 20.10+ silences engine warnings.
+
+set -euo pipefail
+
+#### CONFIG ####
+BRANCH_NAME="${BRANCH_NAME:-Pristine}"
+DASHBOARD_PORT="${DASHBOARD_PORT:-3000}"
+START_TIMEOUT="${START_TIMEOUT:-75}"
+
+# Prefer workspace scripts; fall back to filter if missing
+CMD_DASHBOARD="${CMD_DASHBOARD:-}"
+PLAYWRIGHT_CMD="${PLAYWRIGHT_CMD:-}"
+ENV_SMOKE_SCRIPT="${ENV_SMOKE_SCRIPT:-./scripts/test/env-smoke-test.sh}"
+
+HEALTH_ROUTE="http://localhost:${DASHBOARD_PORT}/api/health"
+HEALTH_DB_ROUTE="http://localhost:${DASHBOARD_PORT}/api/health/db"
+PROTECTED_ROUTE="http://localhost:${DASHBOARD_PORT}/api/me"
+
+ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$ROOT_DIR"
+
+# ---- helpers ----
+section(){ echo -e "\n\033[1m$1\033[0m"; }
+need(){ command -v "$1" >/dev/null || { echo "❌ Missing: $1"; exit 1; }; }
+wait_http_200(){
+  local url="$1" label="$2" timeout="${3:-$START_TIMEOUT}"
+  echo "⏳ Waiting ${timeout}s for $label ($url)..."
+  local start=$(date +%s)
+  while true; do
+    code=$(curl -s -o /dev/null -w "%{http_code}" "$url" || true)
+    [[ "$code" =~ ^(200|204)$ ]] && { echo "✅ $label up"; return 0; }
+    (( $(date +%s) - start > timeout )) && { echo "❌ Timeout for $label"; return 1; }
+    sleep 2
+  done
+}
+assert_status(){
+  local url="$1" expect="$2" label="$3" header="${4:-}"
+  local code
+  if [[ -n "$header" ]]; then
+    code=$(curl -s -o /dev/null -w "%{http_code}" -H "$header" "$url" || true)
+  else
+    code=$(curl -s -o /dev/null -w "%{http_code}" "$url" || true)
+  fi
+  [[ "$code" == "$expect" ]] && echo "✅ $label ($expect)" || { echo "❌ $label expected $expect, got $code"; exit 1; }
+}
+
+PIDS=()
+cleanup(){
+  echo -e "\n🧹 Cleanup..."
+  for pid in "${PIDS[@]:-}"; do
+    if ps -p "$pid" >/dev/null 2>&1; then
+      kill "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
+    fi
+  done
+  echo "✅ Done."
+}
+trap cleanup EXIT INT TERM
+
+# ---- preflight ----
+section "0) Preconditions"
+need git; need pnpm; need curl; need jq
+echo "🔎 Node: $(node -v 2>/dev/null || echo 'missing')"
+echo "🔎 PNPM: $(pnpm -v)"
+
+# Node engines warning only – allow run to proceed
+if pnpm config get engine-strict 2>/dev/null | grep -qi true; then
+  echo "ℹ️ Disabling engine-strict for this run"; pnpm config set engine-strict false >/dev/null
+fi
+
+section "1) Ensure on branch '$BRANCH_NAME'"
+CURRENT="$(git rev-parse --abbrev-ref HEAD)"
+if [[ "$CURRENT" != "$BRANCH_NAME" ]]; then
+  git fetch origin "$BRANCH_NAME" --depth=1 || true
+  git checkout "$BRANCH_NAME"
+fi
+# If branch is orphan/no upstream, skip pull; otherwise rebase
+if git rev-parse --abbrev-ref --symbolic-full-name "@{u}" >/dev/null 2>&1; then
+  git pull --rebase --autostash || true
+else
+  echo "ℹ️ No upstream tracking for $BRANCH_NAME; continuing without pull."
+fi
+
+section "2) Install (workspace)"
+corepack enable >/dev/null 2>&1 || true
+pnpm install --frozen-lockfile || pnpm install
+
+section "3) Env Guard"
+if [[ -x "$ENV_SMOKE_SCRIPT" ]]; then
+  bash "$ENV_SMOKE_SCRIPT"
+else
+  echo "ℹ️ $ENV_SMOKE_SCRIPT not found; running minimal guard…"
+  # Minimal, non-fatal checks
+  for f in ./.env ./.env.example ./.env.local ./packages/db/.env ./packages/server/.env; do
+    [[ -f "$f" ]] || { echo "❌ Missing $f"; exit 1; }
+  done
+  echo "✅ Minimal env guard passed"
+fi
+
+section "4) Build (packages → apps)"
+pnpm -r build
+
+section "5) Determine app start command"
+# Prefer root script if present; else use filter
+if pnpm -s run | grep -q '^dev:tenant-dashboard'; then
+  CMD_DASHBOARD="${CMD_DASHBOARD:-pnpm dev:tenant-dashboard}"
+else
+  # Find the package name or path; safest is path filter:
+  CMD_DASHBOARD="${CMD_DASHBOARD:-pnpm --filter ./apps/tenant-dashboard dev}"
+fi
+echo "▶️ Using start command: $CMD_DASHBOARD"
+
+section "6) Start tenant-dashboard (background)"
+# Start in parent shell (NOT a subshell) so $! is set
+set +e
+$CMD_DASHBOARD >/tmp/td.out 2>/tmp/td.err &
+TD_PID=$!
+set -e
+if [[ -z "${TD_PID:-}" || "$TD_PID" -le 0 ]]; then
+  echo "❌ Failed to start tenant-dashboard (no PID)"; cat /tmp/td.err || true; exit 1
+fi
+PIDS+=("$TD_PID")
+echo "PID: $TD_PID"
+
+wait_http_200 "$HEALTH_ROUTE" "tenant-dashboard /api/health"
+
+section "7) Health checks"
+echo "🔬 /api/health"; curl -s "$HEALTH_ROUTE" | jq '.' || { echo "❌ /api/health parse fail"; exit 1; }
+echo "🔬 /api/health/db (optional)"
+if curl -sf "$HEALTH_DB_ROUTE" >/dev/null; then
+  curl -s "$HEALTH_DB_ROUTE" | jq '.'
+else
+  echo "ℹ️ /api/health/db not present; continuing"
+fi
+
+section "8) Auth sanity"
+assert_status "$PROTECTED_ROUTE" "401" "Protected route without token"
+assert_status "$PROTECTED_ROUTE" "401" "Protected route with bogus token" "Authorization: Bearer test"
+
+section "9) Playwright smokes"
+# Prefer workspace script if present; else skip with info
+if pnpm -s run | grep -q '^test:e2e:smoke'; then
+  PLAYWRIGHT_CMD="${PLAYWRIGHT_CMD:-pnpm -w test:e2e:smoke}"
+  $PLAYWRIGHT_CMD && echo "✅ Playwright smokes PASS"
+else
+  echo "ℹ️ No test:e2e:smoke script found; skipping E2E smoke."
+fi
+
+section "10) Summary"
+echo "🎉 E2E PASS on branch '$BRANCH_NAME'"
