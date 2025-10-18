@@ -3,24 +3,16 @@ frontend:
   phases:
     preBuild:
       commands:
-        - echo "== Node & pnpm versions =="
-        - node -v || true
-        - nvm install 20
-        - nvm use 20
+        - nvm install 20 || true
+        - nvm use 20 || true
         - node -v
         - corepack enable
-        - corepack prepare pnpm@9.12.0 --activate
-        - pnpm -v
-        - echo "== Install (workspace root) =="
-        - pnpm install --frozen-lockfile
-        - echo "== PostCSS/Tailwind config (site-renderer) =="
-        - cat apps/site-renderer/postcss.config.js
-        - cat apps/site-renderer/app/globals.css
-        - echo "== Versions present (site-renderer) =="
-        - pnpm -C apps/site-renderer ls tailwindcss @tailwindcss/postcss postcss autoprefixer
+        - corepack prepare pnpm@9 --activate
+        # 👇 ensure devDependencies (tailwind/postcss) are installed
+        - pnpm install --frozen-lockfile --prod=false
     build:
       commands:
-        - echo "== Building site-renderer from workspace root =="
+        # Build only the site-renderer app
         - pnpm --filter site-renderer build
   artifacts:
     baseDirectory: apps/site-renderer/.next
@@ -28,5 +20,6 @@ frontend:
       - '**/*'
   cache:
     paths:
+      - .pnpm-store/**/*
       - node_modules/**/*
       - apps/site-renderer/.next/cache/**/*
