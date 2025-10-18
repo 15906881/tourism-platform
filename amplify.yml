@@ -9,8 +9,6 @@ frontend:
         - corepack enable
         - corepack prepare pnpm@9 --activate
         - pnpm install --frozen-lockfile --prod=false
-        # quick sanity that v4 plugin resolves:
-        - node -e "require.resolve('@tailwindcss/postcss');console.log('tailwind v4 postcss plugin: OK')"
     build:
       commands:
         - pnpm --filter site-renderer build
