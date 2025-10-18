@@ -1,35 +1,32 @@
 version: 1
-applications:
-  - appRoot: apps/site-renderer
-    frontend:
-      phases:
-        preBuild:
-          commands:
-            - echo "== Node & pnpm versions =="
-            - node -v || true
-            - nvm install 20
-            - nvm use 20
-            - node -v
-            - corepack enable
-            - corepack prepare pnpm@9.12.0 --activate
-            - pnpm -v
-            - echo "== Install (workspace root) =="
-            - cd ../..
-            - pnpm install --frozen-lockfile
-            - echo "== PostCSS/Tailwind config (site-renderer) =="
-            - test -f apps/site-renderer/postcss.config.js && sed -n '1,80p' apps/site-renderer/postcss.config.js || echo "MISSING postcss.config.js"
-            - sed -n '1,20p' apps/site-renderer/app/globals.css
-            - echo "== Versions present (site-renderer) =="
-            - pnpm -C apps/site-renderer ls tailwindcss @tailwindcss/postcss postcss autoprefixer || true
-        build:
-          commands:
-            - echo "== Building site-renderer with Node 20 =="
-            - pnpm build
-      artifacts:
-        baseDirectory: .next
-        files:
-          - '**/*'
-      cache:
-        paths:
-          - ../../node_modules/**/*
-          - .next/cache/**/*
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "== Node & pnpm versions =="
+        - node -v || true
+        - nvm install 20
+        - nvm use 20
+        - node -v
+        - corepack enable
+        - corepack prepare pnpm@9.12.0 --activate
+        - pnpm -v
+        - echo "== Install (workspace root) =="
+        - pnpm install --frozen-lockfile
+        - echo "== PostCSS/Tailwind config (site-renderer) =="
+        - cat apps/site-renderer/postcss.config.js
+        - cat apps/site-renderer/app/globals.css
+        - echo "== Versions present (site-renderer) =="
+        - pnpm -C apps/site-renderer ls tailwindcss @tailwindcss/postcss postcss autoprefixer
+    build:
+      commands:
+        - echo "== Building site-renderer from workspace root =="
+        - pnpm --filter site-renderer build
+  artifacts:
+    baseDirectory: apps/site-renderer/.next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - apps/site-renderer/.next/cache/**/*
