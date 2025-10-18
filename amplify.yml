@@ -8,11 +8,11 @@ frontend:
         - node -v
         - corepack enable
         - corepack prepare pnpm@9 --activate
-        # 👇 ensure devDependencies (tailwind/postcss) are installed
         - pnpm install --frozen-lockfile --prod=false
+        # quick sanity that v4 plugin resolves:
+        - node -e "require.resolve('@tailwindcss/postcss');console.log('tailwind v4 postcss plugin: OK')"
     build:
       commands:
-        # Build only the site-renderer app
         - pnpm --filter site-renderer build
   artifacts:
     baseDirectory: apps/site-renderer/.next
