@@ -11,8 +11,11 @@ frontend:
         - pnpm install --frozen-lockfile
     build:
       commands:
+        - echo "Commit:" $(git rev-parse HEAD)
+        - echo "Branch:" ${AWS_BRANCH}
         - pnpm -C apps/site-renderer build
   artifacts:
+    baseDirectory: apps/site-renderer/.next
     files:
       - '**/*'
   cache:
