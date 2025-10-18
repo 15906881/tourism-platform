@@ -23,9 +23,13 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.8.0",
     "@playwright/test": "^1.40.0",
+    "@tailwindcss/postcss": "^4",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "autoprefixer": "^10",
     "eslint": "^8.0.0",
+    "postcss": "^8",
+    "tailwindcss": "^4",
     "turbo": "^2.0.0",
     "typescript": "^5.9.3"
   },
