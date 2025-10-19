@@ -1,22 +1,11 @@
-import { notFound } from 'next/navigation';
+import { resolveTemplate } from '@/src/renderer/resolveTemplate';
 
-interface Props {
-  params: {
-    slug: string[];
-  };
-}
+export default async function Page({ params }: { params: { slug?: string[] } }) {
+  const slug = params.slug ?? [];
+  // Convention: /site/<template-key>/... -> first segment is the template key
+  const templateKey = slug[0] || 'shared-landing';
+  const Render = resolveTemplate(templateKey);
 
-export default function SubdomainPage({ params }: Props) {
-  const subdomain = params.slug[0];
-  
-  if (!subdomain) {
-    notFound();
-  }
-
-  return (
-    <div>
-      <h1>Welcome to {subdomain}.weblynk.app</h1>
-      <p>This is the site for subdomain: {subdomain}</p>
-    </div>
-  );
+  // TODO: fetch data by slug if needed
+  return <Render />;
 }
