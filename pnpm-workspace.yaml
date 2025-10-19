@@ -1,14 +1,3 @@
 packages:
-  - 'apps/tenant-dashboard'
-  - 'apps/site-renderer'
-  - 'apps/admin' 
-  - 'apps/onboarding'
-  - 'apps/photos-entry'
-  - 'packages/ui'
-  - 'packages/auth'
-  - 'packages/server'
-  - 'packages/db'
-  - 'packages/tokens'
-  - 'packages/api-client'
-  - 'packages/blocks'
-  - 'packages/templates'
+  - "apps/*"
+  - "packages/*"

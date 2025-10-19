@@ -19,6 +19,10 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 8000;
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 app.listen(PORT, () => {
   console.log(`API listening on http://localhost:${PORT}`);
 });

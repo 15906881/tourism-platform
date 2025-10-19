@@ -1,0 +1,23 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm install 20 || true
+        - nvm use 20 || true
+        - node -v
+        - corepack enable
+        - corepack prepare pnpm@9 --activate
+        - pnpm install --frozen-lockfile --prod=false
+    build:
+      commands:
+        - pnpm --filter site-renderer build
+  artifacts:
+    baseDirectory: apps/site-renderer/.next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - .pnpm-store/**/*
+      - node_modules/**/*
+      - apps/site-renderer/.next/cache/**/*

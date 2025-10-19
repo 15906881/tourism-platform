@@ -59,8 +59,8 @@ export function ServiceCard({
             <span className="text-2xl font-bold text-gold-600">
               ${price}
             </span>
-            {currency !== 'USD' && (
-              <span className="text-sm text-gray-500 ml-1">{currency}</span>
+            {_currency !== 'USD' && (
+              <span className="text-sm text-gray-500 ml-1">{_currency}</span>
             )}
             {duration && (
               <span className="text-sm text-gray-500 ml-2">/ {duration}</span>
@@ -68,7 +68,7 @@ export function ServiceCard({
           </div>
 
           {onBook && (
-            <Button onClick={() => onBook(id)}>
+            <Button onClick={() => onBook(_id)}>
               Book Now
             </Button>
           )}

@@ -1,3 +1,4 @@
+import { getId } from "../util/getId";
 import React from 'react';
 import { MenuItem, type MenuItemProps } from './MenuItem';
 import { clsx } from 'clsx';
@@ -20,7 +21,7 @@ export function MenuSection({ title, description, items, className }: MenuSectio
       </div>
       <div className="space-y-0">
         {items.map((item) => (
-          <MenuItem key={item.id} {...item} />
+          <MenuItem key={getId(item)} {...item} />
         ))}
       </div>
     </section>

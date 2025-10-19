@@ -106,7 +106,7 @@ export function RoomCard({
             <span className="text-gray-500 text-sm ml-1">/ night</span>
           </div>
           {onBook && (
-            <Button onClick={() => onBook(id)} disabled={!available}>
+            <Button onClick={() => onBook(_id)} disabled={!available}>
               {available ? 'Book Now' : 'Unavailable'}
             </Button>
           )}

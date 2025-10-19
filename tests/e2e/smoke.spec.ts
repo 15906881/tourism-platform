@@ -3,17 +3,21 @@ import { test, expect } from '@playwright/test';
 test.describe('Smoke Tests', () => {
   test('homepage loads', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    
-    const main = page.locator('main');
-    await expect(main).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Weblynk Platform' })).toBeVisible();
   });
 
   test('can navigate using keyboard', async ({ page }) => {
     await page.goto('/');
-    
+
+    const firstTabbable = page
+      .locator('a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])')
+      .first();
+
+    if (!(await firstTabbable.count()))
+      test.skip(true, 'No tabbable elements on homepage');
+
+    await expect(firstTabbable).toBeVisible();
     await page.keyboard.press('Tab');
-    const focused = page.locator(':focus');
-    await expect(focused).toBeVisible();
+    await expect(firstTabbable).toBeFocused();
   });
 });

@@ -1,32 +1,42 @@
-# syntax=docker/dockerfile:1.7
-ARG NODE_VERSION=20
-FROM node:${NODE_VERSION}-bullseye AS builder
-WORKDIR /repo
+FROM node:18-alpine AS base
+RUN apk add --no-cache libc6-compat
+RUN npm install -g pnpm
+ARG app=admin
 
-# Enable corepack for pnpm
-RUN corepack enable
+FROM base AS deps
+WORKDIR /app
+ARG app
+COPY package.json pnpm-lock.yaml* .npmrc* ./
+COPY apps/$app/package.json ./apps/$app/
+COPY packages/ui/package.json ./packages/ui/
+RUN pnpm install --frozen-lockfile
 
-# Copy package files for optimal layer caching
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
-COPY packages/*/package.json packages/*/
-COPY apps/*/package.json apps/*/
+FROM base AS builder
+WORKDIR /app
+ARG app
+COPY package.json pnpm-lock.yaml* .npmrc* ./
+COPY apps/$app/ ./apps/$app/
+COPY packages/ ./packages/
+COPY --from=deps /app/node_modules ./node_modules
 
-# Pre-fetch dependencies to cache
-RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store \
-    pnpm fetch
+RUN pnpm --filter @weblynk/ui build
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN pnpm --filter $app build
 
-# Copy entire codebase
-COPY . .
+FROM base AS runner
+WORKDIR /app
+ARG app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Generate Prisma client if needed
-RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store \
-    pnpm -r prisma generate 2>/dev/null || echo "Prisma not needed"
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser --system --uid 1001 nextjs
 
-# Build arguments
-ARG APP
-ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+COPY --from=builder --chown=nextjs:nodejs /app/apps/$app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/$app/.next/static ./apps/$app/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/$app/public ./apps/$app/public
 
-# Build the specific app
-RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store \
-    pnpm install -r --offline --frozen-lockfile && \
-    pnpm -C apps/${APP} build
+USER nextjs
+EXPOSE 8000
+ENV PORT=8000
+CMD ["node", "server.js"]
