@@ -1,6 +1,6 @@
 {
   "name": "@weblynk/blocks",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -41,7 +41,7 @@
   "peerDependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@weblynk/ui": "^0.0.1"
+    "@weblynk/ui": "^0.1.0"
   },
   "dependencies": {
     "clsx": "^2.1.0"
