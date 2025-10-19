@@ -8,7 +8,7 @@ frontend:
         - node -v
         - corepack enable
         - pnpm -v
-        - pnpm install --frozen-lockfile
+        - pnpm install --frozen-lockfile --prod=false
     build:
       commands:
         # Build base packages (no @weblynk dependencies)
