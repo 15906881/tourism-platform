@@ -1,149 +1,71 @@
-import React, { useState } from 'react';
-import {
-  useReactTable,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  flexRender,
-} from '@tanstack/react-table';
-import type {
-  ColumnDef,
-  SortingState,
-  ColumnFiltersState,
-  VisibilityState,
-} from '@tanstack/react-table';
-import { cn } from '../../lib/utils';
+import { useState } from 'react';
+import { clsx } from 'clsx';
 
-export interface DataTableProps<TData> {
-  data: TData[];
-  columns: ColumnDef<TData>[];
-  enablePagination?: boolean;
-  enableSorting?: boolean;
-  enableFiltering?: boolean;
-  enableColumnVisibility?: boolean;
-  onRowClick?: (row: TData) => void;
+interface Column {
+  key: string;
+  header: string;
+  render?: (value: any, row: any) => React.ReactNode;
+}
+
+interface DataTableProps {
+  columns: Column[];
+  data: any[];
   className?: string;
 }
 
-export function DataTable<TData>({
-  data,
-  columns,
-  enablePagination = true,
-  enableSorting = true,
-  enableFiltering = true,
-  onRowClick,
-  className
-}: DataTableProps<TData>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
+export function DataTable({ columns, data, className }: DataTableProps) {
+  const [sortKey, setSortKey] = useState<string>('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: enablePagination ? getPaginationRowModel() : undefined,
-    getSortedRowModel: enableSorting ? getSortedRowModel() : undefined,
-    getFilteredRowModel: enableFiltering ? getFilteredRowModel() : undefined,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-    },
+  const sortedData = [...data].sort((a, b) => {
+    if (!sortKey) return 0;
+    const aVal = a[sortKey];
+    const bVal = b[sortKey];
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
   });
 
-  return (
-    <div className={cn('space-y-md', className)}>
-      <div className="rounded-md border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-surface-2">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className={cn(
-                        'px-md py-sm text-left text-sm font-medium text-text',
-                        'border-b border-border',
-                        header.column.getCanSort() && 'cursor-pointer select-none hover:bg-surface-3'
-                      )}
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      <div className="flex items-center gap-xs">
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {header.column.getIsSorted() && (
-                          <span className="text-primary">
-                            {header.column.getIsSorted() === 'asc' ? '↑' : '↓'}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className={cn(
-                    'border-b border-border transition-colors',
-                    'hover:bg-surface-2',
-                    onRowClick && 'cursor-pointer'
-                  )}
-                  onClick={() => onRowClick?.(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-md py-sm text-sm text-text">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDirection('asc');
+    }
+  };
 
-      {enablePagination && (
-        <div className="flex items-center justify-between px-md">
-          <div className="text-sm text-text-muted">
-            {table.getFilteredSelectedRowModel().rows.length} of{' '}
-            {table.getFilteredRowModel().rows.length} row(s) selected
-          </div>
-          <div className="flex items-center gap-sm">
-            <button
-              className="px-md py-sm rounded-md bg-surface text-text border border-border hover:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              Previous
-            </button>
-            <span className="text-sm text-text">
-              Page {table.getState().pagination.pageIndex + 1} of{' '}
-              {table.getPageCount()}
-            </span>
-            <button
-              className="px-md py-sm rounded-md bg-surface text-text border border-border hover:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+  return (
+    <div className={clsx('overflow-x-auto', className)}>
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className="border-b border-border">
+            {columns.map((column) => (
+              <th
+                key={column.key}
+                className="px-4 py-2 text-left cursor-pointer hover:bg-surface-2"
+                onClick={() => handleSort(column.key)}
+              >
+                {column.header}
+                {sortKey === column.key && (
+                  <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {sortedData.map((row, index) => (
+            <tr key={index} className="border-b border-border hover:bg-surface-2">
+              {columns.map((column) => (
+                <td key={column.key} className="px-4 py-2">
+                  {column.render ? column.render(row[column.key], row) : row[column.key]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
