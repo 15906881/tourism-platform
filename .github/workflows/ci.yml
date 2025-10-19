@@ -1,32 +1,28 @@
 name: CI
-
 on:
   push:
     branches: [ "Pristine.02" ]
   pull_request:
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+      
       - name: Setup Node (20.x)
         uses: actions/setup-node@v4
         with:
           node-version: '20.19.5'
-
-      - name: Enable Corepack (use repo-pinned pnpm)
-        run: |
-          corepack enable
-          corepack install
-          pnpm -v
-
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        # No version specified - reads from package.json packageManager field
+      
       - name: Get pnpm store path
         id: pnpm-store
         run: echo "path=$(pnpm store path)" >> $GITHUB_OUTPUT
-
+      
       - name: Restore pnpm cache
         uses: actions/cache@v4
         with:
@@ -34,16 +30,16 @@ jobs:
           key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             pnpm-store-${{ runner.os }}-
-
+      
       - name: Install deps (frozen)
-        run: pnpm install --frozen-lockfile --prod=false
-
+        run: pnpm install --frozen-lockfile
+      
       # Build with dependency graph so packages build before apps
       - name: Build admin (with deps)
-        run: pnpm -r --filter '...admin' --if-present build
-
+        run: pnpm --filter '...admin' build
+      
       - name: Build site-renderer (with deps)
-        run: pnpm -r --filter '...site-renderer' --if-present build
-
+        run: pnpm --filter '...site-renderer' build
+      
       - name: Build tenant-dashboard (with deps)
-        run: pnpm -r --filter '...tenant-dashboard' --if-present build
+        run: pnpm --filter '...tenant-dashboard' build
