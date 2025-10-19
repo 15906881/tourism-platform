@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { DataTable } from './DataTable'
+import { DataTable } from './DataTable.js'
 
 const meta: Meta<typeof DataTable> = { title: 'Core/DataTable', component: DataTable }
 export default meta

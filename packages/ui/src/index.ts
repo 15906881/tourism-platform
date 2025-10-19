@@ -1,20 +1,8 @@
-// App Shell
-export * from './components/AppShell';
-
-// Forms
-export * from './components/Form';
-
-// Tables
-export * from './components/Table';
-
-// Error Handling
-export * from './components/ErrorBoundary';
-
-// Button
-export * from './components/Button';
-
-// Badge
-export * from './components/Badge';
-
-// Utils
-export { cn } from './lib/utils';
+// SAFE BARREL: explicit .js targets only
+export * from './components/AppShell/index.js';
+export * from './components/Badge/index.js';
+export * from './components/Button/index.js';
+export * from './components/ErrorBoundary/index.js';
+export * from './components/Form/index.js';
+export * from './components/Table/index.js';
+export { cn } from './lib/utils.js';
