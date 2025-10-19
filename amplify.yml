@@ -8,14 +8,20 @@ frontend:
         - node -v
         - corepack enable
         - pnpm -v
-        - pnpm install --frozen-lockfile --prod=false
+        - pnpm install --frozen-lockfile
     build:
       commands:
-        # Build with dependency graph so packages (e.g., @weblynk/ui) compile first
-        - pnpm -r --filter '...site-renderer' --if-present build
-        # If you deploy other apps via Amplify, add them too:
-        # - pnpm -r --filter '...admin' --if-present build
-        # - pnpm -r --filter '...tenant-dashboard' --if-present build
+        # Build base packages (no @weblynk dependencies)
+        - pnpm --filter @weblynk/tokens build
+        - pnpm --filter @weblynk/db build
+        - pnpm --filter @weblynk/auth build
+        - pnpm --filter @weblynk/server build
+        # Build UI layer packages
+        - pnpm --filter @weblynk/ui build
+        - pnpm --filter @weblynk/blocks build
+        - pnpm --filter @weblynk/templates build
+        # Build site-renderer app
+        - pnpm --filter site-renderer build
   artifacts:
     baseDirectory: apps/site-renderer/.next
     files:
@@ -23,5 +29,6 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
+      - .pnpm-store/**/*
       - apps/**/.next/cache/**/*
       - packages/**/dist/**/*
