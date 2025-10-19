@@ -1,5 +1,5 @@
+'use client';
 import { getId } from "../util/getId";
-"use client";
 
 import React from 'react';
 import { Badge } from '@weblynk/ui';
