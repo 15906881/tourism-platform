@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,14 +17,12 @@ jobs:
         with:
           node-version: '20.19.5'
 
-      # Install pnpm 9 BEFORE any pnpm commands
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
+      - name: Enable Corepack (use repo-pinned pnpm)
+        run: |
+          corepack enable
+          corepack install
+          pnpm -v
 
-      # Cache pnpm store
       - name: Get pnpm store path
         id: pnpm-store
         run: echo "path=$(pnpm store path)" >> $GITHUB_OUTPUT
@@ -41,7 +38,7 @@ jobs:
       - name: Install deps (frozen)
         run: pnpm install --frozen-lockfile --prod=false
 
-      # Build with dependency graph so packages (e.g., @weblynk/ui) compile first
+      # Build with dependency graph so packages build before apps
       - name: Build admin (with deps)
         run: pnpm -r --filter '...admin' --if-present build
 
