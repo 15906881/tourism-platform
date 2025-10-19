@@ -17,17 +17,31 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.19.5'
-          cache: 'pnpm'
 
-      - name: Enable Corepack & pnpm@9
-        run: |
-          corepack enable
-          corepack prepare pnpm@9 --activate
-          pnpm -v
+      # Install pnpm 9 BEFORE any pnpm commands
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
 
-      - name: Install (frozen lockfile)
+      # Cache pnpm store
+      - name: Get pnpm store path
+        id: pnpm-store
+        run: echo "path=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+
+      - name: Install deps (frozen)
         run: pnpm install --frozen-lockfile --prod=false
 
+      # Build with dependency graph so packages (e.g., @weblynk/ui) compile first
       - name: Build admin (with deps)
         run: pnpm -r --filter '...admin' --if-present build
 
