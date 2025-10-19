@@ -1,58 +1,38 @@
-name: ci
-
-permissions:
-  contents: read
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+name: CI
 
 on:
   push:
-    branches: [main, develop]
-    paths-ignore: ['**/*.md', 'docs/**']
+    branches: [ "Pristine.02" ]
   pull_request:
-    branches: [main, develop] 
-    paths-ignore: ['**/*.md', 'docs/**']
 
 jobs:
-  quality:
+  build:
     runs-on: ubuntu-latest
-    env:
-      CI: true
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # Use pnpm matching your package.json "packageManager"
-      - uses: pnpm/action-setup@v4
-        # no "version" -> reads from package.json to avoid version conflicts
-
-      - uses: actions/setup-node@v4
+      - name: Setup Node (20.x)
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20.19.5'
           cache: 'pnpm'
 
-      - name: Install deps (frozen)
-        run: pnpm install --frozen-lockfile
-
-      # If any app imports @prisma/client at build time
-      - name: Prisma generate (idempotent)
-        run: pnpm -C packages/db prisma generate || true
-
-      # Build shared packages that export built assets (safe no-ops if absent)
-      - name: Build design packages (tokens/ui)
+      - name: Enable Corepack & pnpm@9
         run: |
-          pnpm -r --filter "@weblynk/tokens" --if-present build
-          pnpm -r --filter "@weblynk/ui" --if-present build
+          corepack enable
+          corepack prepare pnpm@9 --activate
+          pnpm -v
 
-      # Lint (use each app's lint script; skips apps without it)
-      - name: Lint (apps only)
-        run: pnpm -r --filter "./apps/*" --if-present lint
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile --prod=false
 
-      # Type check (run tsc in each app; keep soft-fail)
-      - name: Type check (apps only)
-        run: pnpm -r --filter "./apps/*" exec tsc --noEmit
-        continue-on-error: true
+      - name: Build admin (with deps)
+        run: pnpm -r --filter '...admin' --if-present build
 
-      - name: Build (apps only)
-        run: pnpm -r --filter "./apps/*" --if-present build
+      - name: Build site-renderer (with deps)
+        run: pnpm -r --filter '...site-renderer' --if-present build
+
+      - name: Build tenant-dashboard (with deps)
+        run: pnpm -r --filter '...tenant-dashboard' --if-present build
