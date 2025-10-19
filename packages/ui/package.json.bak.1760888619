@@ -3,14 +3,16 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./dist/index.d.ts", 
+      "default": "./dist/index.js"
     },
-    "./styles/a11y.css": "./dist/styles/a11y.css"
+    "./styles/a11y.css": {
+      "default": "./dist/styles/a11y.css"
+    }
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && mkdir -p dist/styles && cp src/styles/a11y.css dist/styles/a11y.css",
@@ -26,9 +28,5 @@
   },
   "devDependencies": {
     "typescript": "^5.0.0"
-  },
-  "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18"
   }
 }
