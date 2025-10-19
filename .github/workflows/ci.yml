@@ -17,7 +17,6 @@ jobs:
       
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        # No version specified - reads from package.json packageManager field
       
       - name: Get pnpm store path
         id: pnpm-store
@@ -31,15 +30,28 @@ jobs:
           restore-keys: |
             pnpm-store-${{ runner.os }}-
       
-      - name: Install deps (frozen)
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
       
-      # Build with dependency graph so packages build before apps
-      - name: Build admin (with deps)
-        run: pnpm --filter '...admin' build
+      # Build shared packages FIRST (in correct order)
+      - name: Build tokens package
+        run: pnpm --filter @weblynk/tokens build
       
-      - name: Build site-renderer (with deps)
-        run: pnpm --filter '...site-renderer' build
+      - name: Build UI package
+        run: pnpm --filter @weblynk/ui build
       
-      - name: Build tenant-dashboard (with deps)
-        run: pnpm --filter '...tenant-dashboard' build
+      - name: Build database package
+        run: pnpm --filter @weblynk/db build
+      
+      - name: Build templates package
+        run: pnpm --filter @weblynk/templates build
+      
+      # Now build apps (they can now resolve @weblynk/* packages)
+      - name: Build admin app
+        run: pnpm --filter admin build
+      
+      - name: Build site-renderer app
+        run: pnpm --filter site-renderer build
+      
+      - name: Build tenant-dashboard app
+        run: pnpm --filter tenant-dashboard build
