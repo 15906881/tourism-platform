@@ -1,5 +1,5 @@
-import { TEMPLATE_REGISTRY, TemplateKey } from '@weblynk/templates';
-import { TemplateRenderer } from '@weblynk/templates';
+import { TEMPLATE_REGISTRY, TemplateRenderer } from '@weblynk/templates';
+import type { TemplateKey } from '@weblynk/templates';
 
 export function resolveTemplate(key: string) {
   const k = key as TemplateKey;
