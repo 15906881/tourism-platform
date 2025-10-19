@@ -19,5 +19,9 @@
   "scripts": {
     "build": "node scripts/build-tokens.js",
     "dev": "node scripts/build-tokens.js --watch"
+  },
+  "engines": {
+    "node": ">=20.19.5",
+    "pnpm": ">=9.12.0"
   }
 }

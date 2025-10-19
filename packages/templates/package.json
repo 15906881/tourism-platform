@@ -32,5 +32,9 @@
     "typescript": "^5.3.0",
     "@weblynk/ui": "workspace:*",
     "@weblynk/blocks": "workspace:*"
+  },
+  "engines": {
+    "node": ">=20.19.5",
+    "pnpm": ">=9.12.0"
   }
 }

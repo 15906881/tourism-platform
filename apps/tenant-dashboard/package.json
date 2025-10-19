@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "bundlecheck": "node scripts/check-bundle.js"
   },
   "dependencies": {
     "@tanstack/react-query": "^4.41.0",
@@ -33,6 +34,7 @@
     "typescript": "^5"
   },
   "engines": {
-    "node": ">=20.10.0"
+    "node": ">=20.10.0",
+    "pnpm": ">=9.12.0"
   }
 }

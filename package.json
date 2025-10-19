@@ -18,7 +18,9 @@
     "test:all": "playwright test",
     "typecheck": "pnpm -r exec tsc --noEmit",
     "smoke:onboarding": "bash scripts/onboarding-smoke.sh http://localhost:3000",
-    "postinstall": "pnpm --filter @weblynk/db run db:generate || true"
+    "postinstall": "pnpm --filter @weblynk/db run db:generate || true",
+    "prepare": "husky",
+    "smoke:ui": "node scripts/smoke-ui.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.8.0",
@@ -38,5 +40,10 @@
   },
   "dependencies": {
     "@trpc/client": "^10.45.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix"
+    ]
   }
 }
