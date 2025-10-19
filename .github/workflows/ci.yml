@@ -1,7 +1,7 @@
 name: CI
 on:
   push:
-    branches: [ "Pristine.02" ]
+    branches: [ 'Pristine.02' ]
   pull_request:
 jobs:
   build:
@@ -33,25 +33,24 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       
-      # Build shared packages FIRST (in correct order)
-      - name: Build tokens package
-        run: pnpm --filter @weblynk/tokens build
+      # Build base packages (no @weblynk dependencies)
+      - name: Build base packages
+        run: |
+          pnpm --filter @weblynk/tokens build
+          pnpm --filter @weblynk/db build
+          pnpm --filter @weblynk/auth build
+          pnpm --filter @weblynk/server build
       
-      - name: Build UI package
-        run: pnpm --filter @weblynk/ui build
+      # Build UI layer packages
+      - name: Build UI packages
+        run: |
+          pnpm --filter @weblynk/ui build
+          pnpm --filter @weblynk/blocks build
+          pnpm --filter @weblynk/templates build
       
-      - name: Build database package
-        run: pnpm --filter @weblynk/db build
-      
-      - name: Build templates package
-        run: pnpm --filter @weblynk/templates build
-      
-      # Now build apps (they can now resolve @weblynk/* packages)
-      - name: Build admin app
-        run: pnpm --filter admin build
-      
-      - name: Build site-renderer app
-        run: pnpm --filter site-renderer build
-      
-      - name: Build tenant-dashboard app
-        run: pnpm --filter tenant-dashboard build
+      # Build all apps
+      - name: Build apps
+        run: |
+          pnpm --filter admin build
+          pnpm --filter site-renderer build
+          pnpm --filter tenant-dashboard build
