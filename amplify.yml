@@ -7,7 +7,6 @@ frontend:
         - nvm use 20 || true
         - node -v
         - corepack enable
-        - corepack prepare pnpm@9 --activate
         - pnpm -v
         - pnpm install --frozen-lockfile --prod=false
     build:
