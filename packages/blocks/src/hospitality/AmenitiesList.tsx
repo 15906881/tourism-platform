@@ -1,3 +1,4 @@
+import { getId } from "../util/getId";
 import React from 'react';
 import { clsx } from 'clsx';
 
@@ -48,7 +49,7 @@ export function AmenitiesList({
             )}
             <div className={clsx('grid gap-4', gridCols[columns])}>
               {items.map((amenity) => (
-                <div key={amenity.id} className="flex items-center gap-3">
+                <div key={getId(amenity)} className="flex items-center gap-3">
                   {amenity.icon && (
                     <span className="text-2xl">{amenity.icon}</span>
                   )}

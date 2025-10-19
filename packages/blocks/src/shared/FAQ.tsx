@@ -1,4 +1,5 @@
-"use client";
+'use client';
+import { getId } from "../util/getId";
 
 import React from 'react';
 import { clsx } from 'clsx';
@@ -28,19 +29,19 @@ export function FAQ({ faqs, className }: FAQProps) {
         <div className="space-y-4">
           {faqs.map((faq) => (
             <div
-              key={faq.id}
+              key={getId(faq)}
               className="border border-gray-200 rounded-lg overflow-hidden"
             >
               <button
-                onClick={() => toggle(faq.id)}
+                onClick={() => toggle(getId(faq))}
                 className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition-colors"
               >
                 <span className="font-medium text-lg">{faq.question}</span>
                 <span className="text-2xl text-gray-400">
-                  {openId === faq.id ? '−' : '+'}
+                  {openId === getId(faq) ? '−' : '+'}
                 </span>
               </button>
-              {openId === faq.id && (
+              {openId === getId(faq) && (
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
                   <p className="text-gray-700">{faq.answer}</p>
                 </div>

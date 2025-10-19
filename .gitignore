@@ -44,3 +44,14 @@ packages/*/.env*
 !**/.env.example
 !**/.env*.example
 # --- end onboarding/env ignores ---
+.vercel
+playwright-report/
+
+# Playwright artifacts
+playwright-report/
+playwright/.cache/
+**/test-results/
+*.bak
+
+# ignore script/editor backups
+*.bak.*

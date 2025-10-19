@@ -1,0 +1,48 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm install 20 || true
+        - nvm use 20 || true
+        - node -v
+        - corepack enable
+        - corepack prepare pnpm@9 --activate
+        - pnpm install --frozen-lockfile --prod=false
+
+        # (Optional) Load SSM params if they exist for this branch
+        - APP_ID=d1zwex9iqbrnwz
+        - echo "Checking SSM at /amplify/${APP_ID}/${AWS_BRANCH}/"
+        - |
+          if aws ssm get-parameters-by-path \
+            --path "/amplify/${APP_ID}/${AWS_BRANCH}/" \
+            --with-decryption \
+            --recursive \
+            --query 'Parameters[*].[Name,Value]' \
+            --output text 2>/dev/null | grep -q .
+          then
+            echo "Loading SSM params into env..."
+            while IFS=$'\t' read -r NAME VALUE; do
+              export "$(basename "$NAME")=$VALUE"
+            done < <(aws ssm get-parameters-by-path \
+                      --path "/amplify/${APP_ID}/${AWS_BRANCH}/" \
+                      --with-decryption \
+                      --recursive \
+                      --query 'Parameters[*].[Name,Value]' \
+                      --output text)
+          else
+            echo "No SSM params found for this branch; continuing without them."
+          fi
+
+    build:
+      commands:
+        - pnpm --filter site-renderer build
+  artifacts:
+    baseDirectory: apps/site-renderer/.next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - .pnpm-store/**/*
+      - node_modules/**/*
+      - apps/site-renderer/.next/cache/**/*

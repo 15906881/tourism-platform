@@ -1,0 +1,23 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('Smoke Tests', () => {
+  test('homepage loads', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Weblynk Platform' })).toBeVisible();
+  });
+
+  test('can navigate using keyboard', async ({ page }) => {
+    await page.goto('/');
+
+    const firstTabbable = page
+      .locator('a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])')
+      .first();
+
+    if (!(await firstTabbable.count()))
+      test.skip(true, 'No tabbable elements on homepage');
+
+    await expect(firstTabbable).toBeVisible();
+    await page.keyboard.press('Tab');
+    await expect(firstTabbable).toBeFocused();
+  });
+});
