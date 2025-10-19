@@ -14,8 +14,37 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+      
       - name: Setup pnpm via Corepack
-  run: |
-    corepack enable
-    corepack install
-    pnpm -v
+        run: |
+          corepack enable
+          corepack install
+          pnpm -v
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.5'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Build packages
+        run: |
+          pnpm --filter @weblynk/tokens build
+          pnpm --filter @weblynk/db build
+          pnpm --filter @weblynk/auth build
+          pnpm --filter @weblynk/server build
+          pnpm --filter @weblynk/ui build
+          pnpm --filter @weblynk/blocks build
+          pnpm --filter @weblynk/templates build
+      
+      - name: Build app
+        run: pnpm --filter ${{ matrix.app }} build
+      
+      - name: Build Docker image
+        run: |
+          docker build \
+            -f apps/${{ matrix.app }}/Dockerfile \
+            -t ${{ matrix.app }}:latest \
+            .
