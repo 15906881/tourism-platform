@@ -7,7 +7,7 @@ export async function createContext() {
   let db: any = null;
   if (backend === 'db') {
     try {
-      const mod: any = await import('@weblynk/db/generated/prisma');
+      const mod: any = await import('@weblynk/db');
       db = new mod.PrismaClient();
     } catch (e: any) {
       console.error('[context] Failed to import Prisma client:', e?.message || e);

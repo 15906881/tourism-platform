@@ -1,1 +1,1 @@
-declare module '@weblynk/db/generated/prisma';
+declare module '@weblynk/db';
