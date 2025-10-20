@@ -6,6 +6,23 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    # Add PostgreSQL service
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tourism_dev
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,6 +49,25 @@ jobs:
       
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      
+      # Setup database
+      - name: Setup PostgreSQL extensions and schema
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d tourism_dev -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+          psql -h localhost -U postgres -d tourism_dev -c "CREATE SCHEMA IF NOT EXISTS core;"
+          psql -h localhost -U postgres -d tourism_dev -c "ALTER DATABASE tourism_dev SET search_path TO core,public;"
+      
+      # Run migrations
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tourism_dev?schema=core
+          PRISMA_SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tourism_shadow?schema=core
+        run: |
+          cd packages/db
+          pnpm prisma migrate deploy
+          pnpm prisma generate
       
       # Build base packages (no @weblynk dependencies)
       - name: Build base packages
