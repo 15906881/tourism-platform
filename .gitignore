@@ -57,3 +57,5 @@ playwright/.cache/
 *.bak.*
 packages/db/prisma/generated/
 .turbo/
+backups/
+*.bak*
