@@ -55,3 +55,5 @@ playwright/.cache/
 
 # ignore script/editor backups
 *.bak.*
+packages/db/prisma/generated/
+.turbo/
