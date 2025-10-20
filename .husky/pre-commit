@@ -1,2 +1,3 @@
 #!/usr/bin/env sh
-pnpm exec lint-staged
+export PATH="$PWD/node_modules/.bin:$PATH"
+lint-staged
