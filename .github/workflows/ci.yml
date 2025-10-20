@@ -58,15 +58,18 @@ jobs:
           psql -h localhost -U postgres -d tourism_dev -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
           psql -h localhost -U postgres -d tourism_dev -c "CREATE SCHEMA IF NOT EXISTS core;"
           psql -h localhost -U postgres -d tourism_dev -c "ALTER DATABASE tourism_dev SET search_path TO core,public;"
+          psql -h localhost -U postgres -d postgres -c "CREATE DATABASE tourism_shadow OWNER postgres;"
+          psql -h localhost -U postgres -d tourism_shadow -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+          psql -h localhost -U postgres -d tourism_shadow -c "CREATE SCHEMA IF NOT EXISTS core;"
       
-      # Run migrations
-      - name: Run database migrations
+      # Push database schema (creates all tables from scratch)
+      - name: Setup database schema
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tourism_dev?schema=core
           PRISMA_SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tourism_shadow?schema=core
         run: |
           cd packages/db
-          pnpm prisma migrate deploy
+          pnpm prisma db push --skip-generate
           pnpm prisma generate
       
       # Build base packages (no @weblynk dependencies)
