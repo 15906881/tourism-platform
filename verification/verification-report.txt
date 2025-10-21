@@ -1,0 +1,70 @@
+🚀 Running comprehensive verification suite...
+==============================================
+🔍 Checking RLS status on all core tables...
+Pager usage is off.
+Timing is on.
+Expanded display is used automatically.
+ schema |       table        | rls_on 
+--------+--------------------+--------
+ core   | _prisma_migrations | f
+ core   | accounts           | t
+ core   | audit_logs         | t
+ core   | hello              | t
+ core   | leads              | t
+ core   | listing_media      | t
+ core   | listings           | t
+ core   | media              | t
+ core   | memberships        | t
+ core   | pages              | t
+ core   | sites              | t
+ core   | subscriptions      | t
+ core   | templates          | t
+ core   | tenant_templates   | t
+ core   | tenants            | t
+ core   | users              | t
+(16 rows)
+
+Time: 6.227 ms
+
+✅ RLS status check complete
+   Expected: All business tables should have rls_on = t
+   OK if _prisma_migrations has rls_on = f
+
+🧪 Testing tenant isolation...
+Testing with Tenant A: Pager usage is off.
+Timing is on.
+Expanded display is used automatically.
+ 0b119236-a473-400a-8e4c-346747c02045
+
+Time: 12.709 ms
+Testing with Tenant B: Pager usage is off.
+Timing is on.
+Expanded display is used automatically.
+ 11111111-1111-1111-1111-111111111111
+
+Time: 1.323 ms
+
+=== Testing core.users table ===
+Pager usage is off.
+Timing is on.
+Expanded display is used automatically.
+SET
+        ?column?         
+-------------------------
+ Tenant A users count: 4
+(1 row)
+
+SET
+        ?column?         
+-------------------------
+ Tenant B users count: 4
+(1 row)
+
+Time: 2.552 ms
+
+=== Testing core.accounts table (via memberships) ===
+Pager usage is off.
+Timing is on.
+Expanded display is used automatically.
+SET
+Time: 3.738 ms
