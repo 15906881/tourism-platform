@@ -1,0 +1,38 @@
+name: Upload Source Maps to Sentry
+on:
+  deployment:
+
+jobs:
+  upload-sourcemaps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Build all apps
+        run: pnpm build
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      
+      - name: Upload source maps to Sentry
+        run: |
+          for app in admin site-renderer tenant-dashboard; do
+            pnpm --filter $app exec sentry-cli sourcemaps inject apps/$app/.next
+            pnpm --filter $app exec sentry-cli sourcemaps upload apps/$app/.next \
+              --org $SENTRY_ORG \
+              --project tourism-$app
+          done
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}

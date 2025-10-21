@@ -1,15 +1,42 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
-  "rangeStrategy": "bump",
-  "labels": ["deps"],
-  "prHourlyLimit": 2,
-  "automerge": false,
-  "packageRules": [
-    { "matchManagers": ["pnpm"], "enabled": true },
-    { "matchPackagePatterns": ["^@types/"], "automerge": true, "automergeType": "pr" },
-    { "matchPackageNames": ["typescript"], "groupName": "typescript family" },
-    { "matchPackagePatterns": ["^eslint", "^@typescript-eslint"], "groupName": "eslint family" }
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":semanticCommitTypeAll(chore)"
   ],
-  "ignorePaths": ["**/node_modules/**", "**/.next/**"]
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch",
+      "schedule": ["on monday"]
+    },
+    {
+      "matchPackagePatterns": ["^@sentry/", "^next$", "^@next/"],
+      "groupName": "monitoring and nextjs",
+      "schedule": ["on the first day of the month"]
+    },
+    {
+      "matchPackagePatterns": ["^@types/", "^typescript$"],
+      "groupName": "typescript ecosystem",
+      "schedule": ["on the first day of the month"]
+    },
+    {
+      "matchPackagePatterns": ["^prisma", "^@prisma/"],
+      "groupName": "prisma ecosystem",
+      "schedule": ["every 3 months on the first day of the month"]
+    },
+    {
+      "matchDepTypes": ["engines"],
+      "enabled": false
+    }
+  ],
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 2,
+  "rangeStrategy": "bump",
+  "automerge": false,
+  "ignoreTests": false
 }
