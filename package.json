@@ -19,7 +19,12 @@
     "typecheck": "pnpm -r exec tsc --noEmit",
     "smoke:onboarding": "bash scripts/onboarding-smoke.sh http://localhost:3000",
     "postinstall": "pnpm --filter @weblynk/db run db:generate || true",
-    "smoke:ui": "node scripts/smoke-ui.mjs"
+    "smoke:ui": "node scripts/smoke-ui.mjs",
+    "db:validate": "env $(cat packages/db/.env | xargs) pnpm --filter @weblynk/db exec prisma validate",
+    "db:generate": "env $(cat packages/db/.env | xargs) pnpm --filter @weblynk/db exec prisma generate",
+    "db:migrate-deploy": "env $(cat packages/db/.env | xargs) pnpm --filter @weblynk/db exec prisma migrate deploy",
+    "ci:secrets-check": "./ci-secret-check.sh",
+    "ci:rls-check": "./ci-rls-check.sh"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.8.0",
