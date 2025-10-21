@@ -3,12 +3,13 @@ set -e
 
 echo "🗄️ Validating database state..."
 
-# Check for schema drift
-env $(cat packages/db/.env | xargs) pnpm --filter @weblynk/db exec \
-  prisma migrate diff \
-  --from-schema-datamodel packages/db/prisma/schema.prisma \
+# Check for schema drift - use correct relative path
+cd packages/db
+env $(cat .env | xargs) pnpm exec prisma migrate diff \
+  --from-schema-datamodel ./prisma/schema.prisma \
   --to-url "$DATABASE_URL" \
   --exit-code
+cd ../..
 
 # Check RLS is enabled on all core tables
 RLS_VIOLATIONS=$(psql "$DATABASE_URL" -t -c "
