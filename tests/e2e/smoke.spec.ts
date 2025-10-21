@@ -1,23 +1,23 @@
 import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 
 test.describe('Smoke Tests', () => {
-  test('homepage loads', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1, name: 'Weblynk Platform' })).toBeVisible();
+  test('admin app loads and is accessible', async ({ page }) => {
+    await page.goto(process.env.BASE_URL_ADMIN!);
+    await expect(page).toHaveTitle(/Admin/);
+    
+    // Accessibility check
+    const results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations).toEqual([]);
   });
 
-  test('can navigate using keyboard', async ({ page }) => {
-    await page.goto('/');
+  test('health endpoints respond', async ({ request }) => {
+    const response = await request.get(`${process.env.BASE_URL_ADMIN}/api/healthz`);
+    expect(response.status()).toBe(200);
+  });
 
-    const firstTabbable = page
-      .locator('a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])')
-      .first();
-
-    if (!(await firstTabbable.count()))
-      test.skip(true, 'No tabbable elements on homepage');
-
-    await expect(firstTabbable).toBeVisible();
-    await page.keyboard.press('Tab');
-    await expect(firstTabbable).toBeFocused();
+  test('tenant dashboard loads', async ({ page }) => {
+    await page.goto(process.env.BASE_URL_TENANT_DASHBOARD!);
+    await expect(page).toHaveTitle(/Dashboard/);
   });
 });

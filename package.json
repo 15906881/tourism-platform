@@ -24,7 +24,11 @@
     "db:generate": "env $(cat packages/db/.env | xargs) pnpm --filter @weblynk/db exec prisma generate",
     "db:migrate-deploy": "env $(cat packages/db/.env | xargs) pnpm --filter @weblynk/db exec prisma migrate deploy",
     "ci:secrets-check": "./ci-secret-check.sh",
-    "ci:rls-check": "./ci-rls-check.sh"
+    "ci:rls-check": "./ci-rls-check.sh",
+    "ci:build-validation": "./ci-build-validation.sh",
+    "ci:db-validation": "./ci-db-validation.sh",
+    "ci:security-check": "./quick-security-check.sh",
+    "test:e2e:ci": "playwright test tests/e2e/smoke.spec.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.8.0",

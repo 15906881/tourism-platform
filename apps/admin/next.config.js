@@ -41,3 +41,28 @@ moduleExports.headers = async () => {
 };
 
 module.exports = moduleExports;
+// CSP configuration
+const csp = `
+  default-src 'self';
+  script-src 'self' 'unsafe-eval' 'unsafe-inline';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data: https:;
+  font-src 'self';
+  connect-src 'self' https://sentry.io;
+  frame-ancestors 'none';
+`.replace(/\n/g, ' ').trim()
+
+// Add to existing headers
+const existingHeaders = module.exports.headers || (() => [])
+module.exports.headers = async () => {
+  const existing = await existingHeaders()
+  return [
+    ...existing,
+    {
+      source: '/(.*)',
+      headers: [
+        { key: 'Content-Security-Policy', value: csp },
+      ],
+    }
+  ]
+}

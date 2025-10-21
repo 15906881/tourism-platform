@@ -1,0 +1,6 @@
+{
+  "packageManager": "pnpm@10.18.3",
+  "scripts": {
+    "ci:lockfile-check": "git diff --exit-code pnpm-lock.yaml"
+  }
+}
