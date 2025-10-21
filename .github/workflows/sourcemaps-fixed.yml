@@ -3,7 +3,7 @@ name: Upload Source Maps to Sentry
 on:
   push:
     branches: [Pristine.02]
-  workflow_dispatch:  # Allow manual triggers
+  workflow_dispatch:
 
 jobs:
   upload-sourcemaps:
@@ -17,7 +17,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
+          cache: 'pnpm'
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
       
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
