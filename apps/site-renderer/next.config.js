@@ -1,3 +1,5 @@
+const { withSentryConfig } = require('@sentry/nextjs');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
@@ -30,4 +32,15 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+const sentryOptions = {
+  silent: true,
+  org: process.env.SENTRY_ORG,
+  project: 'tourism-site-renderer',
+};
+
+module.exports = withSentryConfig(nextConfig, sentryOptions, {
+  widenClientFileUpload: true,
+  transpileClientSDK: true,
+  hideSourceMaps: true,
+  disableLogger: true,
+});

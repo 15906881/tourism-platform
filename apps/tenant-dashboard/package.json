@@ -9,6 +9,7 @@
     "bundlecheck": "node scripts/check-bundle.js"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.20.0",
     "@tanstack/react-query": "^4.41.0",
     "@trpc/client": "^10.45.2",
     "@trpc/next": "^10.45.2",
