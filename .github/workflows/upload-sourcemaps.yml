@@ -1,0 +1,61 @@
+name: Upload Source Maps to Sentry
+
+on:
+  push:
+    branches: [ Pristine.02, main ]
+  workflow_dispatch: {}
+
+concurrency:
+  group: sourcemaps-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  upload:
+    # Run only on push (skip PR duplicates)
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ENVIRONMENT: pristine-02
+      SENTRY_RELEASE: ${{ github.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Install deps (workspace)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build apps
+        run: |
+          pnpm --filter admin build
+          pnpm --filter site-renderer build
+          pnpm --filter tenant-dashboard build
+
+      # Upload sourcemaps for all three apps
+      - name: Create Sentry release + upload sourcemaps
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_ORG: ${{ env.SENTRY_ORG }}
+          SENTRY_AUTH_TOKEN: ${{ env.SENTRY_AUTH_TOKEN }}
+        with:
+          environment: ${{ env.SENTRY_ENVIRONMENT }}
+          version: ${{ env.SENTRY_RELEASE }}
+          projects: |
+            tourism-admin
+            tourism-site-renderer
+            tourism-tenant-dashboard
+          sourcemaps: |
+            apps/admin/.next
+            apps/site-renderer/.next
+            apps/tenant-dashboard/.next
+          ignore_missing: true
+          set_commits: auto
