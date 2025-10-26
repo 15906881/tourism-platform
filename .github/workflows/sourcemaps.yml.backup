@@ -1,0 +1,66 @@
+name: Upload Source Maps to Sentry
+on:
+  deployment:
+
+jobs:
+  upload-sourcemaps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Set Sentry release
+        run: echo "SENTRY_RELEASE=${GITHUB_SHA}" >> $GITHUB_ENV
+      
+      - name: Build all apps
+        run: pnpm build
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_RELEASE: ${{ env.SENTRY_RELEASE }}
+      
+      - name: Upload sourcemaps (admin)
+        working-directory: apps/admin
+        run: |
+          npx sentry-cli releases new "$SENTRY_RELEASE"
+          npx sentry-cli releases files "$SENTRY_RELEASE" upload-sourcemaps .next \
+            --rewrite --url-prefix "~/_next" --ext js --ext map
+          npx sentry-cli releases finalize "$SENTRY_RELEASE"
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: tourism-admin
+      
+      - name: Upload sourcemaps (site-renderer)
+        working-directory: apps/site-renderer
+        run: |
+          npx sentry-cli releases new "$SENTRY_RELEASE"
+          npx sentry-cli releases files "$SENTRY_RELEASE" upload-sourcemaps .next \
+            --rewrite --url-prefix "~/_next" --ext js --ext map
+          npx sentry-cli releases finalize "$SENTRY_RELEASE"
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: tourism-site-renderer
+      
+      - name: Upload sourcemaps (tenant-dashboard)
+        working-directory: apps/tenant-dashboard
+        run: |
+          npx sentry-cli releases new "$SENTRY_RELEASE"
+          npx sentry-cli releases files "$SENTRY_RELEASE" upload-sourcemaps .next \
+            --rewrite --url-prefix "~/_next" --ext js --ext map
+          npx sentry-cli releases finalize "$SENTRY_RELEASE"
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: tourism-tenant-dashboard

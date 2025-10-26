@@ -1,0 +1,48 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "SecretsManagerAccess",
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+                "secretsmanager:UpdateSecretVersionStage",
+                "secretsmanager:PutSecretValue"
+            ],
+            "Resource": [
+                "arn:aws:secretsmanager:us-east-1:247006907925:secret:tourism/dev/app_site_renderer*",
+                "arn:aws:secretsmanager:us-east-1:247006907925:secret:tourism/dev/app_tenant_dashboard*",
+                "arn:aws:secretsmanager:us-east-1:247006907925:secret:tourism/dev/app_admin*",
+                "arn:aws:secretsmanager:us-east-1:247006907925:secret:rds!db-c4435874-1ea9-4d27-aa87-023ca4400af4*"
+            ]
+        },
+        {
+            "Sid": "KMSDecryptAccess",
+            "Effect": "Allow",
+            "Action": [
+                "kms:Decrypt",
+                "kms:GenerateDataKey"
+            ],
+            "Resource": [
+                "arn:aws:kms:us-east-1:247006907925:key/*"
+            ],
+            "Condition": {
+                "StringEquals": {
+                    "kms:ViaService": "secretsmanager.us-east-1.amazonaws.com"
+                }
+            }
+        },
+        {
+            "Sid": "RDSMinimalAccess",
+            "Effect": "Allow",
+            "Action": [
+                "rds:DescribeDBInstances",
+                "rds:ModifyDBInstance"
+            ],
+            "Resource": [
+                "arn:aws:rds:us-east-1:247006907925:db:tourism-platform-dev-postgres"
+            ]
+        }
+    ]
+}

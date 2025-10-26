@@ -1,10 +1,15 @@
-# Tourism Platform — Dev Notes
-
-Run/build/test instructions will be added in upcoming PRs.
-# Debug CI formatting issue - Tue 16 Sep 2025 22:03:40 MDT
-## Docs
-- [Architecture & Issue Plan](docs/architecture-and-issue-plan-v1.md)
-- [Repo Structure](docs/STRUCTURE.md)
-# Updated Sun 21 Sep 2025 08:16:23 MDT
-# Updated Sun 21 Sep 2025 08:18:12 MDT
-# debug trigger
+# Multi-Tenant Booking System
+## Quick Start
+1. **Setup Database**
+```bash
+createdb booking_system
+export DATABASE_URL='postgresql://localhost:5432/booking_system'
+psql $DATABASE_URL -f migrations/001_initial_schema.sql
+./scripts/seed_sample_data.sh
+```
+```bash
+# Use python3 on macOS
+python3 -m venv venv
+source venv/bin/activate
+pip install fastapi uvicorn psycopg2-binary python-dotenv
+```

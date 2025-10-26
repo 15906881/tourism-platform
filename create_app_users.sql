@@ -1,0 +1,17 @@
+-- Create app roles with least privilege
+CREATE ROLE app_tenant_dashboard LOGIN PASSWORD '' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+CREATE ROLE app_site_renderer   LOGIN PASSWORD '' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+CREATE ROLE app_admin           LOGIN PASSWORD '' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+
+-- Grant schema access
+GRANT USAGE ON SCHEMA core TO app_tenant_dashboard, app_site_renderer, app_admin;
+
+-- Table grants (least privilege)
+GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA core TO app_tenant_dashboard;
+GRANT SELECT ON ALL TABLES IN SCHEMA core TO app_site_renderer;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA core TO app_admin;
+
+-- Future table grants
+ALTER DEFAULT PRIVILEGES IN SCHEMA core GRANT SELECT, INSERT, UPDATE ON TABLES TO app_tenant_dashboard;
+ALTER DEFAULT PRIVILEGES IN SCHEMA core GRANT SELECT ON TABLES TO app_site_renderer;
+ALTER DEFAULT PRIVILEGES IN SCHEMA core GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_admin;

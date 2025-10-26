@@ -1,0 +1,461 @@
+from fastapi import FastAPI, HTTPException, Header
+from pydantic import BaseModel
+from typing import Optional, List
+import os
+import asyncpg
+from dotenv import load_dotenv
+from datetime import datetime, timedelta, time, timezone
+import pytz
+import json
+from uuid import uuid4
+import hashlib
+
+# Load environment variables from .env file
+load_dotenv()
+
+app = FastAPI(title='Booking System API')
+
+# Database connection pool
+pool = None
+
+# Day mapping for opening_hours
+DAY_KEY = {0: 'mon', 1: 'tue', 2: 'wed', 3: 'thu', 4: 'fri', 5: 'sat', 6: 'sun'}
+
+# Active booking statuses
+ACTIVE_STATUSES = ('PENDING', 'CONFIRMED')
+
+def _parse_hhmm(s: str) -> time:
+    return datetime.strptime(s, '%H:%M').time()
+
+def _overlaps(a_start, a_end, b_start, b_end) -> bool:
+    return a_start < b_end and b_start < a_end  # strict overlap
+
+def _to_tz(dt_naive_date: datetime, t: time, tz):
+    # combine a date with a local time, handling DST folds/gaps via normalize()
+    local = tz.localize(datetime.combine(dt_naive_date.date(), t), is_dst=None)
+    return tz.normalize(local)
+
+def _iso_to_aware(dt_str: str):
+    # accept ISO with/without offset; coerce to aware
+    dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=pytz.UTC)
+    return dt
+
+def generate_time_slots(opening_hours: dict, duration_mins: int, step_mins: int, date_local: datetime, tz) -> list:
+    '''Return slot starts (timezone-aware, tenant TZ) for a single day using mon/tue/etc keys'''
+    slots = []
+    key = DAY_KEY[date_local.weekday()]  # 'mon'..'sun'
+    
+    # Handle if opening_hours is a string (from asyncpg jsonb)
+    if isinstance(opening_hours, str):
+        opening_hours = json.loads(opening_hours)
+    
+    windows = opening_hours.get(key, []) or []
+    if not windows:
+        return slots
+
+    duration = timedelta(minutes=duration_mins)
+    step = timedelta(minutes=step_mins or duration_mins)
+
+    for w in windows:
+        start_t = _parse_hhmm(w['start'])
+        end_t = _parse_hhmm(w['end'])
+        window_start = _to_tz(date_local, start_t, tz)
+        window_end   = _to_tz(date_local, end_t, tz)
+
+        cur = window_start
+        while cur + duration <= window_end:
+            slots.append(cur)
+            cur += step
+    return slots
+
+class AvailabilityRequest(BaseModel):
+    from_date: str
+    days: int = 14
+
+class CreateBookingRequest(BaseModel):
+    service_id: str
+    starts_at: str
+    customer_name: str
+    customer_email: str
+    customer_phone: Optional[str] = None
+
+
+def _hash_request(booking: CreateBookingRequest) -> str:
+    """Create deterministic hash of booking request"""
+    payload = {
+        'service_id': booking.service_id,
+        'starts_at': booking.starts_at,
+        'customer_name': booking.customer_name,
+        'customer_email': booking.customer_email,
+        'customer_phone': booking.customer_phone
+    }
+    return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+
+@app.on_event('startup')
+async def startup():
+    global pool
+    db_url = os.getenv('DATABASE_URL')
+    print(f'Connecting to database: {db_url}')
+    pool = await asyncpg.create_pool(db_url)
+
+@app.get('/')
+async def root():
+    return {'message': 'Booking System API'}
+
+@app.get('/health')
+async def health_check():
+    try:
+        async with pool.acquire() as conn:
+            db_ok = await conn.fetchval('SELECT 1')
+            return {
+                'status': 'healthy',
+                'database': 'connected',
+                'tenants': await conn.fetchval('SELECT COUNT(*) FROM tenants'),
+                'services': await conn.fetchval('SELECT COUNT(*) FROM services')
+            }
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f'Database error: {e}')
+
+@app.get('/public/v1/services/{service_id}/availability')
+async def get_availability(service_id: str, from_date: str, days: int = 14):
+    '''Return bookable slots with lead time, buffers, capacity, overlaps, DST-safe.'''
+    async with pool.acquire() as conn:
+        svc = await conn.fetchrow(
+            '''select id, tenant_id, active, opening_hours, duration_mins,
+                      coalesce(buffer_before_mins,0) as buffer_before_mins,
+                      coalesce(buffer_after_mins,0)  as buffer_after_mins,
+                      coalesce(capacity,1)           as capacity,
+                      coalesce(lead_time_mins,0)     as lead_time_mins,
+                      coalesce(slot_step_mins, duration_mins) as slot_step_mins
+               from services where id = $1 and active = true''',
+            service_id
+        )
+        if not svc:
+            raise HTTPException(status_code=404, detail='Service not found or inactive')
+
+        tenant = await conn.fetchrow('select timezone from tenants where id = $1', svc['tenant_id'])
+        tzname = tenant['timezone'] if tenant and tenant['timezone'] else 'America/New_York'
+        tz = pytz.timezone(tzname)
+
+        try:
+            start_local = tz.localize(datetime.strptime(from_date, '%Y-%m-%d'))
+        except ValueError:
+            raise HTTPException(status_code=400, detail='Invalid date format. Use YYYY-MM-DD')
+
+        end_local = start_local + timedelta(days=days)
+        now_local = datetime.now(tz)
+        lead_deadline_local = now_local + timedelta(minutes=int(svc['lead_time_mins']))
+
+        # Fetch bookings - use UPPERCASE enum values
+        bookings = await conn.fetch(
+            '''select starts_at, ends_at, status
+               from bookings
+               where service_id = $1
+                 and status = ANY($2::booking_status[])
+                 and starts_at >= $3
+                 and starts_at <  $4
+               order by starts_at''',
+            service_id, ACTIVE_STATUSES, start_local, end_local
+        )
+
+        # Normalize existing bookings to UTC intervals (including buffers)
+        buf_before = timedelta(minutes=int(svc['buffer_before_mins']))
+        buf_after  = timedelta(minutes=int(svc['buffer_after_mins']))
+        existing_utc = []
+        for b in bookings:
+            # asyncpg returns aware datetimes; normalize to UTC
+            b_start_utc = b['starts_at'].astimezone(timezone.utc)
+            b_end_utc   = b['ends_at'].astimezone(timezone.utc)
+            existing_utc.append((b_start_utc - buf_before, b_end_utc + buf_after))
+
+        # Generate candidate slots per day (tenant TZ), then evaluate in UTC against capacity/lead time
+        duration = timedelta(minutes=int(svc['duration_mins']))
+        step_mins = int(svc['slot_step_mins'])
+        opening_hours = svc['opening_hours']  # jsonb -> may be string
+        available = []
+
+        day = 0
+        while day < days and len(available) < 100:
+            date_local = start_local + timedelta(days=day)
+            for slot_local in generate_time_slots(opening_hours, int(svc['duration_mins']), step_mins, date_local, tz):
+                slot_end_local = slot_local + duration
+                # Lead time check (in local TZ)
+                if slot_local < lead_deadline_local:
+                    continue
+                # Past check
+                if slot_local <= now_local:
+                    continue
+
+                # Convert to UTC for overlap/capacity evaluation
+                s_utc = slot_local.astimezone(timezone.utc)
+                e_utc = slot_end_local.astimezone(timezone.utc)
+
+                # Count overlaps with existing intervals (buffers included)
+                concurrent = 0
+                for (b_s, b_e) in existing_utc:
+                    if _overlaps(s_utc, e_utc, b_s, b_e):
+                        concurrent += 1
+                        if concurrent >= int(svc['capacity']):
+                            break
+                if concurrent < int(svc['capacity']):
+                    available.append(slot_local.isoformat())
+                    if len(available) >= 100:
+                        break
+            day += 1
+
+        return {'service_id': service_id, 'available_slots': available}
+
+@app.post('/public/v1/bookings')
+async def create_booking(
+    booking: CreateBookingRequest,
+    idempotency_key: Optional[str] = Header(default=None, convert_underscores=False, alias='Idempotency-Key')
+):
+    '''
+    Create a booking with:
+      - Idempotency (Idempotency-Key header)
+      - Lead-time, buffer, capacity & overlap enforcement
+      - Concurrency safety via advisory lock
+    '''
+    if not idempotency_key:
+        # Generate one if not provided
+        idempotency_key = f'anon-{uuid4()}'
+
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            # Compute request hash for idempotency validation
+            request_hash = _hash_request(booking)
+            
+            # 1) Load service + tenant
+            svc = await conn.fetchrow('''
+                SELECT s.id, s.tenant_id, s.duration_mins, s.capacity,
+                       COALESCE(s.buffer_before_mins,0) AS buffer_before_mins,
+                       COALESCE(s.buffer_after_mins,0)  AS buffer_after_mins,
+                       COALESCE(s.lead_time_mins,0)     AS lead_time_mins,
+                       s.active
+                  FROM services s
+                 WHERE s.id = $1
+            ''', booking.service_id)
+            if not svc or not svc['active']:
+                raise HTTPException(404, 'Service not found or inactive')
+
+            tenant = await conn.fetchrow(
+                'SELECT timezone FROM tenants WHERE id = $1',
+                svc['tenant_id']
+            )
+            tz_name = tenant['timezone'] if tenant and tenant['timezone'] else 'America/New_York'
+            tz = pytz.timezone(tz_name)
+
+            # 2) Parse/normalize requested start, compute end
+            starts_local = _iso_to_aware(booking.starts_at).astimezone(tz)
+            duration = timedelta(minutes=int(svc['duration_mins']))
+            buffer_before = timedelta(minutes=int(svc['buffer_before_mins']))
+            buffer_after  = timedelta(minutes=int(svc['buffer_after_mins']))
+
+            # Booking window INCLUDING buffers
+            slot_start_local = starts_local - buffer_before
+            slot_end_local   = (starts_local + duration) + buffer_after
+
+            starts_utc = starts_local.astimezone(pytz.UTC)
+            ends_utc   = (starts_local + duration).astimezone(pytz.UTC)
+            slot_start_utc = slot_start_local.astimezone(pytz.UTC)
+            slot_end_utc   = slot_end_local.astimezone(pytz.UTC)
+
+            # 3) Lead-time enforcement
+            lead = timedelta(minutes=int(svc['lead_time_mins']))
+            now_utc = datetime.now(pytz.UTC)
+            if starts_utc < now_utc + lead:
+                raise HTTPException(400, detail='Requested time does not meet lead time requirement')
+
+            # 4) Idempotency with ON CONFLICT pattern
+            if idempotency_key:
+                # Try insert; ON CONFLICT DO NOTHING returns null if key exists
+                row = await conn.fetchrow("""
+                    INSERT INTO bookings (
+                        id, tenant_id, service_id,
+                        customer_email, customer_name,
+                        starts_at, ends_at, status,
+                        cancel_token, reschedule_token,
+                        idempotency_key, request_hash
+                    ) VALUES (
+                        $1, $2, $3,
+                        $4, $5,
+                        $6, $7, 'CONFIRMED',
+                        $8, $9,
+                        $10, $11
+                    )
+                    ON CONFLICT (idempotency_key) DO NOTHING
+                    RETURNING id, status, cancel_token, reschedule_token, request_hash
+                """,
+                new_id, svc['tenant_id'], svc['id'],
+                booking.customer_email, booking.customer_name,
+                starts_utc, ends_utc,
+                cancel_token, resched_token,
+                idempotency_key, request_hash)
+                
+                if row is None:
+                    # Key already used - fetch existing
+                    row = await conn.fetchrow("""
+                        SELECT id, status, cancel_token, reschedule_token, request_hash
+                        FROM bookings
+                        WHERE idempotency_key = $1
+                    """, idempotency_key)
+                    
+                    if row['request_hash'] != request_hash:
+                        # Same key, different payload -> 409
+                        raise HTTPException(
+                            status_code=409,
+                            detail='Idempotency key reused with different request payload'
+                        )
+                    # Perfect replay: return original response
+                    return {
+                        'booking_id': str(row['id']),
+                        'status': row['status'],
+                        'cancel_token': row['cancel_token'],
+                        'reschedule_token': row['reschedule_token']
+                    }
+            else:
+                # No idempotency key - normal insert
+                row = await conn.fetchrow("""
+                    INSERT INTO bookings (
+                        id, tenant_id, service_id,
+                        customer_email, customer_name,
+                        starts_at, ends_at, status,
+                        cancel_token, reschedule_token
+                    ) VALUES (
+                        $1, $2, $3,
+                        $4, $5,
+                        $6, $7, 'CONFIRMED',
+                        $8, $9
+                    )
+                    RETURNING id, status, cancel_token, reschedule_token
+                """,
+                new_id, svc['tenant_id'], svc['id'],
+                booking.customer_email, booking.customer_name,
+                starts_utc, ends_utc,
+                cancel_token, resched_token)
+            
+            return {
+                'booking_id': str(row['id']),
+                'status': row['status'],
+                'cancel_token': row['cancel_token'],
+                'reschedule_token': row['reschedule_token']
+            }
+
+
+@app.post('/public/v1/bookings/{booking_id}/cancel')
+async def cancel_booking(booking_id: str, token: str):
+    '''Cancel a booking using the cancel token'''
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            b = await conn.fetchrow(
+                'SELECT status FROM bookings WHERE id=$1 AND cancel_token=$2', 
+                booking_id, token
+            )
+            if not b:
+                raise HTTPException(404, 'Booking not found or invalid token')
+            
+            if b['status'] == 'CANCELLED':
+                return {'status': 'CANCELLED', 'message': 'Already cancelled'}
+            
+            await conn.execute(
+                "UPDATE bookings SET status='CANCELLED' WHERE id=$1", 
+                booking_id
+            )
+            return {'status': 'CANCELLED', 'message': 'Booking cancelled successfully'}
+
+@app.post('/public/v1/bookings/{booking_id}/reschedule')
+async def reschedule_booking(booking_id: str, token: str, new_starts_at: str):
+    """Reschedule a booking to a new time slot"""
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            # 1) Load existing booking and verify token
+            existing = await conn.fetchrow("""
+                SELECT b.id, b.service_id, b.tenant_id, b.status,
+                       b.starts_at, b.ends_at, b.customer_name, b.customer_email
+                FROM bookings b
+                WHERE b.id = $1 AND b.reschedule_token = $2
+            """, booking_id, token)
+            
+            if not existing:
+                raise HTTPException(404, 'Booking not found or invalid token')
+            
+            if existing['status'] not in ('PENDING', 'CONFIRMED'):
+                raise HTTPException(400, f"Cannot reschedule booking with status {existing['status']}")
+            
+            # 2) Load service details
+            svc = await conn.fetchrow("""
+                SELECT s.id, s.duration_mins, s.capacity,
+                       COALESCE(s.buffer_before_mins,0) AS buffer_before_mins,
+                       COALESCE(s.buffer_after_mins,0)  AS buffer_after_mins,
+                       COALESCE(s.lead_time_mins,0)     AS lead_time_mins,
+                       s.active
+                FROM services s
+                WHERE s.id = $1
+            """, existing['service_id'])
+            
+            if not svc or not svc['active']:
+                raise HTTPException(404, 'Service not found or inactive')
+            
+            tenant = await conn.fetchrow('SELECT timezone FROM tenants WHERE id = $1', existing['tenant_id'])
+            tz_name = tenant['timezone'] if tenant and tenant['timezone'] else 'America/New_York'
+            tz = pytz.timezone(tz_name)
+            
+            # 3) Parse new time
+            new_starts_local = _iso_to_aware(new_starts_at).astimezone(tz)
+            duration = timedelta(minutes=int(svc['duration_mins']))
+            buffer_before = timedelta(minutes=int(svc['buffer_before_mins']))
+            buffer_after  = timedelta(minutes=int(svc['buffer_after_mins']))
+            
+            slot_start_local = new_starts_local - buffer_before
+            slot_end_local   = (new_starts_local + duration) + buffer_after
+            
+            new_starts_utc = new_starts_local.astimezone(pytz.UTC)
+            new_ends_utc   = (new_starts_local + duration).astimezone(pytz.UTC)
+            slot_start_utc = slot_start_local.astimezone(pytz.UTC)
+            slot_end_utc   = slot_end_local.astimezone(pytz.UTC)
+            
+            # 4) Lead-time check
+            lead = timedelta(minutes=int(svc['lead_time_mins']))
+            now_utc = datetime.now(pytz.UTC)
+            if new_starts_utc < now_utc + lead:
+                raise HTTPException(400, detail='Requested time does not meet lead time requirement')
+            
+            # 5) Advisory lock
+            await conn.execute(
+                'SELECT pg_advisory_xact_lock(hashtextextended($1 || \'|\' || $2, 0))',
+                str(svc['id']), new_starts_utc.isoformat()
+            )
+            
+            # 6) Check capacity (exclude current booking)
+            overlap_count = await conn.fetchval("""
+                SELECT COUNT(*) FROM bookings
+                WHERE service_id = $1
+                  AND id != $2
+                  AND status = ANY($3::booking_status[])
+                  AND starts_at < $5
+                  AND ends_at   > $4
+            """, svc['id'], booking_id, ACTIVE_STATUSES, slot_start_utc, slot_end_utc)
+            
+            if overlap_count >= int(svc['capacity']):
+                raise HTTPException(status_code=409, detail='New slot not available')
+            
+            # 7) Update booking
+            await conn.execute("""
+                UPDATE bookings
+                SET starts_at = $1, ends_at = $2
+                WHERE id = $3
+            """, new_starts_utc, new_ends_utc, booking_id)
+            
+            return {
+                'booking_id': booking_id,
+                'status': existing['status'],
+                'starts_at': new_starts_utc.isoformat(),
+                'ends_at': new_ends_utc.isoformat(),
+                'message': 'Booking rescheduled successfully'
+            }
+
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run(app, host='0.0.0.0', port=8000)
