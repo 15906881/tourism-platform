@@ -4,5 +4,13 @@ import type { TemplateKey } from '@weblynk/templates';
 export function resolveTemplate(key: string) {
   const k = key as TemplateKey;
   const config = TEMPLATE_REGISTRY[k] ?? TEMPLATE_REGISTRY['shared-landing'];
-  return (props: { data?: unknown }) => <TemplateRenderer config={config} {...props} />;
+  
+  const TemplateComponent = (props: { data?: unknown }) => (
+    <TemplateRenderer config={config} {...props} />
+  );
+  
+  // Add display name for better debugging
+  TemplateComponent.displayName = `Template_${key}`;
+  
+  return TemplateComponent;
 }
