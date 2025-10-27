@@ -1,5 +1,7 @@
 module.exports = {
-  output: 'export',
+  output: 'standalone',  // ← Change to this
   trailingSlash: true,
-  images: { unoptimized: true }
-};
+  images: {
+    unoptimized: true
+  }
+}
