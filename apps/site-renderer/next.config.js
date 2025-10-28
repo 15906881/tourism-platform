@@ -31,7 +31,7 @@ const nextConfig = {
             value: 'weblynk\\.app',
           },
         ],
-        destination: '/site/:path*',  // Changed from /default/:path*
+        destination: '/site/:path*',
       }
     ];
   },
