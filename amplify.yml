@@ -5,24 +5,25 @@ applications:
       phases:
         preBuild:
           commands:
+            - cd ../..
             - nvm install 20.19.5 || true
             - nvm use 20.19.5 || true
-            - node -v
             - corepack enable
             - pnpm install --frozen-lockfile --prod=false
         build:
           commands:
+            - cd ../..
             - pnpm --filter @weblynk/tokens build
             - pnpm --filter @weblynk/ui build
             - pnpm --filter @weblynk/blocks build
             - pnpm --filter @weblynk/templates build
             - pnpm --filter site-renderer build
       artifacts:
-        baseDirectory: apps/site-renderer/.next
+        baseDirectory: .next
         files:
           - '**/*'
       cache:
         paths:
-          - node_modules/**/*
-          - .pnpm-store/**/*
+          - ../../node_modules/**/*
+          - ../../.pnpm-store/**/*
     platform: WEB_COMPUTE
