@@ -1,34 +1,31 @@
 version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - nvm install 20.19.5 || true
-        - nvm use 20.19.5 || true
-        - node -v
-        - corepack enable
-        - pnpm -v
-        - pnpm install --frozen-lockfile --prod=false
-    build:
-      commands:
-        # Build base packages (no @weblynk dependencies)
-        - pnpm --filter @weblynk/tokens build
-        - pnpm --filter @weblynk/db build
-        - pnpm --filter @weblynk/auth build
-        - pnpm --filter @weblynk/server build
-        # Build UI layer packages
-        - pnpm --filter @weblynk/ui build
-        - pnpm --filter @weblynk/blocks build
-        - pnpm --filter @weblynk/templates build
-        # Build site-renderer app
-        - pnpm --filter site-renderer build
-  artifacts:
-    baseDirectory: apps/site-renderer/.next
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-      - .pnpm-store/**/*
-      - apps/**/.next/cache/**/*
-      - packages/**/dist/**/*
+applications:
+  - appRoot: apps/site-renderer
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - nvm install 20.19.5 || true
+            - nvm use 20.19.5 || true
+            - corepack enable
+            - pnpm install --frozen-lockfile --prod=false
+        build:
+          commands:
+            - pnpm --filter @weblynk/tokens build
+            - pnpm --filter @weblynk/ui build
+            - pnpm --filter @weblynk/blocks build
+            - pnpm --filter @weblynk/templates build
+            - pnpm --filter site-renderer build
+            - echo "=== Checking standalone directory ==="
+            - ls -la apps/site-renderer/.next/standalone/
+            - cp -r apps/site-renderer/.next/standalone/. apps/site-renderer/.next/deploy
+            - cp -r apps/site-renderer/.next/static apps/site-renderer/.next/deploy/apps/site-renderer/.next/static
+            - cp -r apps/site-renderer/public apps/site-renderer/.next/deploy/apps/site-renderer/public
+      artifacts:
+        baseDirectory: apps/site-renderer/.next/deploy
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+          - .pnpm-store/**/*
