@@ -1,29 +1,25 @@
 version: 1
-applications:
-  - appRoot: apps/site-renderer
-    frontend:
-      phases:
-        preBuild:
-          commands:
-            - cd ../..
-            - nvm install 20.19.5 || true
-            - nvm use 20.19.5 || true
-            - corepack enable
-            - pnpm install --frozen-lockfile --prod=false
-        build:
-          commands:
-            - cd ../..
-            - pnpm --filter @weblynk/tokens build
-            - pnpm --filter @weblynk/ui build
-            - pnpm --filter @weblynk/blocks build
-            - pnpm --filter @weblynk/templates build
-            - pnpm --filter site-renderer build
-      artifacts:
-        baseDirectory: .next
-        files:
-          - '**/*'
-      cache:
-        paths:
-          - ../../node_modules/**/*
-          - ../../.pnpm-store/**/*
-    platform: WEB_COMPUTE
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm install 20.19.5 || true
+        - nvm use 20.19.5 || true
+        - corepack enable
+        - pnpm install --frozen-lockfile --prod=false
+    build:
+      commands:
+        - pnpm --filter @weblynk/tokens build
+        - pnpm --filter @weblynk/ui build
+        - pnpm --filter @weblynk/blocks build
+        - pnpm --filter @weblynk/templates build
+        - pnpm --filter site-renderer build
+  artifacts:
+    baseDirectory: apps/site-renderer/.next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .pnpm-store/**/*
+      - apps/site-renderer/.next/cache/**/*
