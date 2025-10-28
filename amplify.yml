@@ -7,6 +7,7 @@ applications:
           commands:
             - nvm install 20.19.5 || true
             - nvm use 20.19.5 || true
+            - node -v
             - corepack enable
             - pnpm install --frozen-lockfile --prod=false
         build:
@@ -16,16 +17,12 @@ applications:
             - pnpm --filter @weblynk/blocks build
             - pnpm --filter @weblynk/templates build
             - pnpm --filter site-renderer build
-            - echo "=== Checking standalone directory ==="
-            - ls -la apps/site-renderer/.next/standalone/
-            - cp -r apps/site-renderer/.next/standalone/. apps/site-renderer/.next/deploy
-            - cp -r apps/site-renderer/.next/static apps/site-renderer/.next/deploy/apps/site-renderer/.next/static
-            - cp -r apps/site-renderer/public apps/site-renderer/.next/deploy/apps/site-renderer/public
       artifacts:
-        baseDirectory: apps/site-renderer/.next/deploy
+        baseDirectory: apps/site-renderer/.next
         files:
           - '**/*'
       cache:
         paths:
           - node_modules/**/*
           - .pnpm-store/**/*
+    platform: WEB_COMPUTE
