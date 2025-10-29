@@ -32,6 +32,16 @@ const nextConfig = {
           },
         ],
         destination: '/site/:path*',
+      },
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: '.*\\.amplifyapp\\.com',
+          },
+        ],
+        destination: '/site/:path*',
       }
     ];
   },
