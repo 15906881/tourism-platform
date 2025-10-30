@@ -2,7 +2,6 @@ const { withSentryConfig } = require('@sentry/nextjs');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
   transpilePackages: ['@weblynk/templates', '@weblynk/blocks', '@weblynk/ui'],
   trailingSlash: true,
   images: {
