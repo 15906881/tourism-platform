@@ -2,47 +2,13 @@ const { withSentryConfig } = require('@sentry/nextjs');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@weblynk/templates', '@weblynk/blocks', '@weblynk/ui'],
+  output: 'export',
   trailingSlash: true,
   images: {
     unoptimized: true
   },
   eslint: {
     ignoreDuringBuilds: true,
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/:path*',
-        has: [
-          {
-            type: 'host',
-            value: '(?<subdomain>.+)\\.weblynk\\.app',
-          },
-        ],
-        destination: '/site/:path*',
-      },
-      {
-        source: '/:path*',
-        has: [
-          {
-            type: 'host',
-            value: 'weblynk\\.app',
-          },
-        ],
-        destination: '/site/:path*',
-      },
-      {
-        source: '/:path*',
-        has: [
-          {
-            type: 'host',
-            value: '.*\\.amplifyapp\\.com',
-          },
-        ],
-        destination: '/site/:path*',
-      }
-    ];
   },
   async headers() {
     return [

@@ -6,7 +6,7 @@ frontend:
         - nvm install 20.19.5 || true
         - nvm use 20.19.5 || true
         - corepack enable
-        - pnpm install --frozen-lockfile --prod=false
+        - pnpm install --frozen-lockfile
     build:
       commands:
         - pnpm --filter @weblynk/tokens build
@@ -15,11 +15,10 @@ frontend:
         - pnpm --filter @weblynk/templates build
         - pnpm --filter site-renderer build
   artifacts:
-    baseDirectory: apps/site-renderer/.next
+    baseDirectory: apps/site-renderer/out
     files:
       - '**/*'
   cache:
     paths:
       - node_modules/**/*
       - .pnpm-store/**/*
-      - apps/site-renderer/.next/cache/**/*
