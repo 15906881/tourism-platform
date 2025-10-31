@@ -22,3 +22,23 @@ frontend:
     paths:
       - node_modules/**/*
       - .pnpm-store/**/*
+
+    # Create deploy-manifest.json for Amplify WEB_COMPUTE
+    - |
+      echo "Creating deploy-manifest.json for Amplify..."
+      cd apps/tenant-dashboard
+      cat > .next/deploy-manifest.json << 'MANIFEST'
+      {
+        "version": 1,
+        "routes": [
+          {
+            "path": "/*",
+            "mode": "SSR"
+          }
+        ],
+        "staticFiles": [
+          ".next/static/**"
+        ]
+      }
+      MANIFEST
+      echo "deploy-manifest.json created successfully"
