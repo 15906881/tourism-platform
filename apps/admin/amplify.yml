@@ -3,20 +3,21 @@ frontend:
   phases:
     preBuild:
       commands:
+        - nvm install 20.19.5 || true
+        - nvm use 20.19.5 || true
         - corepack enable
-        - corepack prepare pnpm@latest --activate
-        - pnpm -v
-        - node -v
-        - pnpm install --frozen-lockfile
+        - cd ../.. && pnpm install --frozen-lockfile && cd apps/admin
     build:
       commands:
+        - cd ../..
+        - pnpm --filter @weblynk/tokens build
+        - pnpm --filter @weblynk/ui build
         - pnpm --filter admin build
   artifacts:
-    baseDirectory: .next
+    baseDirectory: out
     files:
       - '**/*'
   cache:
     paths:
-      - node_modules/**/*
-      - .next/cache/**/*
-  appRoot: apps/admin
+      - ../../node_modules/**/*
+      - ../../.pnpm-store/**/*
