@@ -26,6 +26,7 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@aws-amplify/adapter-nextjs": "^1.6.10",
     "@types/node": "^20",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
