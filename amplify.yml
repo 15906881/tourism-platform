@@ -1,26 +1,36 @@
 version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - nvm install 20 || true
-        - nvm use 20 || true
-        - npm install -g pnpm
-        - pnpm install --frozen-lockfile
-    build:
-      commands:
-        # build shared packages first
-        - pnpm --filter @weblynk/tokens build
-        - pnpm --filter @weblynk/ui build
-        - pnpm --filter @weblynk/blocks build
-        - pnpm --filter @weblynk/templates build
-        # now build the app in THIS app root (Amplify will cd there because of AMPLIFY_MONOREPO_APP_ROOT)
-        - pnpm build
-  artifacts:
-    baseDirectory: .next
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-      - .pnpm-store/**/*
+applications:
+  - appRoot: .
+    frontend:
+      buildPath: /
+      phases:
+        preBuild:
+          commands:
+            - nvm install 20 || true
+            - nvm use 20 || true
+            - npm install -g pnpm
+            - pnpm install --frozen-lockfile
+        build:
+          commands:
+            # 1) shared packages
+            - pnpm --filter @weblynk/tokens build
+            - pnpm --filter @weblynk/ui build
+            - pnpm --filter @weblynk/blocks build
+            - pnpm --filter @weblynk/templates build
+            # 2) pick the app from env
+            - export APP_ROOT="${AMPLIFY_MONOREPO_APP_ROOT:-apps/site-renderer}"
+            - echo "➡️ Building $APP_ROOT"
+            - cd "$APP_ROOT"
+            - pnpm build
+            - cd -
+            # 3) normalize for artifacts
+            - rm -rf .next
+            - cp -R "$APP_ROOT/.next" .next
+      artifacts:
+        baseDirectory: .next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+          - .pnpm-store/**/*
