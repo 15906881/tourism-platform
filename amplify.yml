@@ -1,6 +1,6 @@
 version: 1
 applications:
-  - appRoot: ${AMPLIFY_MONOREPO_APP_ROOT}
+  - appRoot: apps/site-renderer
     frontend:
       buildPath: /
       phases:
@@ -22,7 +22,7 @@ applications:
               pnpm build
               cd -
       artifacts:
-        baseDirectory: ${AMPLIFY_MONOREPO_APP_ROOT}/.next
+        baseDirectory: apps/site-renderer/.next
         files:
           - '**/*'
       cache:
