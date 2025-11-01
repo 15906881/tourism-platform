@@ -34,7 +34,6 @@
     "@weblynk/blocks": "workspace:*"
   },
   "engines": {
-    "node": ">=20.19.5",
-    "pnpm": ">=9.12.0"
+    "node": ">=20.19.5"
   }
 }
