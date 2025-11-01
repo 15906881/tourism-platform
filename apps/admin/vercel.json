@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile",
-  "buildCommand": "cd ../.. && pnpm --filter ./apps/admin... build && cd apps/admin",
+  "installCommand": "cd /vercel/path0 && pnpm install --no-frozen-lockfile",
+  "buildCommand": "cd /vercel/path0 && pnpm --filter ./apps/admin... build",
   "outputDirectory": ".next",
   "framework": "nextjs"
 }
