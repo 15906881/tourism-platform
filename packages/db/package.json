@@ -32,5 +32,6 @@
   "types": "dist/index.d.ts",
   "engines": {
     "node": ">=20.19.5"
-  }
+  },
+  "private": true
 }
