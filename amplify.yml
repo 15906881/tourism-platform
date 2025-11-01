@@ -2,12 +2,13 @@ version: 1
 applications:
   - appRoot: apps/tenant-dashboard
     frontend:
+      buildPath: /
       phases:
         preBuild:
           commands:
-            - nvm install 20.19.5 || true
-            - nvm use 20.19.5 || true
-            - corepack enable
+            - nvm install 20 || true
+            - nvm use 20 || true
+            - npm install -g pnpm
             - pnpm install --frozen-lockfile
         build:
           commands:
@@ -15,10 +16,9 @@ applications:
             - pnpm --filter @weblynk/ui build
             - pnpm --filter @weblynk/blocks build
             - pnpm --filter @weblynk/templates build
-            - pnpm --filter @weblynk/server build
             - pnpm --filter tenant-dashboard build
       artifacts:
-        baseDirectory: apps/tenant-dashboard/.next
+        baseDirectory: .next
         files:
           - '**/*'
       cache:
