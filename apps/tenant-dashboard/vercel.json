@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "installCommand": "corepack enable && corepack prepare pnpm@9.12.0 --activate && pnpm install --no-frozen-lockfile",
-  "buildCommand": "pnpm build",
+  "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile",
+  "buildCommand": "cd ../.. && pnpm --filter ./apps/tenant-dashboard... build && cd apps/tenant-dashboard",
   "outputDirectory": ".next",
   "framework": "nextjs"
 }
