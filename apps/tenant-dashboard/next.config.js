@@ -2,6 +2,7 @@ const { withSentryConfig } = require('@sentry/nextjs');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   trailingSlash: true,
   images: {
     unoptimized: true
@@ -17,14 +18,9 @@ const sentryOptions = {
   project: 'tourism-tenant-dashboard',
 };
 
-const configWithSentry = withSentryConfig(nextConfig, sentryOptions, {
+module.exports = withSentryConfig(nextConfig, sentryOptions, {
   widenClientFileUpload: true,
   transpileClientSDK: true,
   hideSourceMaps: true,
   disableLogger: true,
-});
-
-// Add Amplify adapter - CORRECT IMPORT
-const { adapter } = require('@aws-amplify/adapter-nextjs');
-
-module.exports = adapter(configWithSentry);
+})
