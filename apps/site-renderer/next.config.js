@@ -1,31 +1,38 @@
+// apps/site-renderer/next.config.js
 const { withSentryConfig } = require('@sentry/nextjs');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  output: 'standalone',
   trailingSlash: true,
-  images: {
-    unoptimized: true
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  async headers() {
+  images: { unoptimized: true },
+  eslint: { ignoreDuringBuilds: true },
+  async rewrites() {
     return [
       {
-        source: '/(.*)',
-        headers: [
-          { key: 'X-DNS-Prefetch-Control', value: 'on' },
-          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'DENY' },
-          { key: 'X-XSS-Protection', value: '1; mode=block' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' }
-        ],
-      }
+        source: '/:path*',
+        has: [{ type: 'host', value: '(?<subdomain>.+)\\.weblynk\\.app' }],
+        destination: '/site/:path*',
+      },
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'weblynk\\.app' }],
+        destination: '/default/:path*',
+      },
     ];
-  }
+  },
+  async headers() {
+    const securityHeaders = [
+      { key: 'X-DNS-Prefetch-Control', value: 'on' },
+      { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'X-XSS-Protection', value: '1; mode=mode=block' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+    ];
+    return [{ source: '/(.*)', headers: securityHeaders }];
+  },
 };
 
 const sentryOptions = {
