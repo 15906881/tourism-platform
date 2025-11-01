@@ -12,17 +12,16 @@ applications:
             - pnpm install --frozen-lockfile
         build:
           commands:
+            # shared pkgs first (optional, but you do this everywhere)
             - pnpm --filter @weblynk/tokens build
             - pnpm --filter @weblynk/ui build
             - pnpm --filter @weblynk/blocks build
             - pnpm --filter @weblynk/templates build
-            - |
-              echo "Building app at: ${AMPLIFY_MONOREPO_APP_ROOT}"
-              cd ${AMPLIFY_MONOREPO_APP_ROOT}
-              pnpm build
-              cd -
+            # now the actual site
+            - pnpm --filter site-renderer build
       artifacts:
-        baseDirectory: apps/site-renderer/.next
+        # 👈 important: we are already inside apps/site-renderer
+        baseDirectory: .next
         files:
           - '**/*'
       cache:
