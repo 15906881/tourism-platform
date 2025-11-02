@@ -11,7 +11,7 @@ jobs:
     name: Deploy site-renderer to personal team
     runs-on: ubuntu-latest
     env:
-      # personal team values (already added as secrets in GitHub)
+      # personal team values
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_SR }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_SITE }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_SR }}
@@ -22,7 +22,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.4.0  # Fixed to match package.json
+          version: 10.4.0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -36,6 +36,26 @@ jobs:
       - name: Build ONLY site-renderer
         run: pnpm turbo run build --filter=site-renderer
 
+      - name: Create vercel.json to skip build
+        working-directory: apps/site-renderer
+        run: |
+          cat > vercel.json <<'JSON'
+          {
+            "version": 2,
+            "builds": [
+              {
+                "src": "package.json",
+                "use": "@vercel/static-build",
+                "config": {
+                  "zeroConfig": true
+                }
+              }
+            ],
+            "buildCommand": "echo 'Already built by GitHub Actions'",
+            "outputDirectory": ".next"
+          }
+          JSON
+
       - name: Create .vercel directory and config
         working-directory: apps/site-renderer
         run: |
@@ -47,7 +67,7 @@ jobs:
           }
           JSON
 
-      - name: Vercel local build (use personal token)
+      - name: Vercel local build (creates .vercel/output)
         working-directory: apps/site-renderer
         run: npx vercel@latest build --prod --yes --token "${{ env.VERCEL_TOKEN }}"
 
