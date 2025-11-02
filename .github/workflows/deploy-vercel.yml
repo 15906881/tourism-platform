@@ -19,24 +19,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1) Setup pnpm FIRST (before Node with pnpm cache)
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.4.0
 
-      # 2) Then setup Node with pnpm cache (now pnpm exists)
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
 
-      # 3) Install workspace deps
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
 
-      # 4) Create per-app vercel config
       - name: Create .vercel directory and config
         working-directory: apps/admin
         run: |
@@ -48,15 +44,14 @@ jobs:
           }
           EOF
 
-      # 5) Build locally on the runner
-      - name: Vercel build (admin)
-        working-directory: apps/admin
-        run: npx vercel@latest build --prod --yes --token "${{ env.VERCEL_TOKEN }}"
+      # Build the app first with our controlled build
+      - name: Build admin app
+        run: pnpm turbo run build --filter=admin
 
-      # 6) Deploy the prebuilt output
-      - name: Deploy to Vercel (prebuilt)
+      # Then let Vercel discover the already-built app
+      - name: Deploy to Vercel
         working-directory: apps/admin
-        run: npx vercel@latest deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}"
+        run: npx vercel@latest deploy --prod --yes --token "${{ env.VERCEL_TOKEN }}"
 
   tenant:
     name: Deploy tenant-dashboard
@@ -92,13 +87,12 @@ jobs:
           }
           EOF
 
-      - name: Vercel build (tenant)
-        working-directory: apps/tenant-dashboard
-        run: npx vercel@latest build --prod --yes --token "${{ env.VERCEL_TOKEN }}"
+      - name: Build tenant-dashboard app
+        run: pnpm turbo run build --filter=tenant-dashboard
 
-      - name: Deploy to Vercel (prebuilt)
+      - name: Deploy to Vercel
         working-directory: apps/tenant-dashboard
-        run: npx vercel@latest deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}"
+        run: npx vercel@latest deploy --prod --yes --token "${{ env.VERCEL_TOKEN }}"
 
   site:
     name: Deploy site-renderer
@@ -134,10 +128,9 @@ jobs:
           }
           EOF
 
-      - name: Vercel build (site)
-        working-directory: apps/site-renderer
-        run: npx vercel@latest build --prod --yes --token "${{ env.VERCEL_TOKEN }}"
+      - name: Build site-renderer app
+        run: pnpm turbo run build --filter=site-renderer
 
-      - name: Deploy to Vercel (prebuilt)
+      - name: Deploy to Vercel
         working-directory: apps/site-renderer
-        run: npx vercel@latest deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}"
+        run: npx vercel@latest deploy --prod --yes --token "${{ env.VERCEL_TOKEN }}"
