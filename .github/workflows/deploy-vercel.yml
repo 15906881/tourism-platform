@@ -7,7 +7,6 @@ on:
   workflow_dispatch: {}
 
 env:
-  # shared
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
@@ -18,20 +17,17 @@ jobs:
     env:
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: pnpm
 
       - name: Enable corepack + pin pnpm
         run: |
           corepack enable
           corepack prepare pnpm@9.12.0 --activate
-          pnpm -v
 
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
@@ -62,20 +58,17 @@ jobs:
     env:
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_TENANT }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: pnpm
 
       - name: Enable corepack + pin pnpm
         run: |
           corepack enable
           corepack prepare pnpm@9.12.0 --activate
-          pnpm -v
 
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
@@ -106,20 +99,17 @@ jobs:
     env:
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_SITE }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: pnpm
 
       - name: Enable corepack + pin pnpm
         run: |
           corepack enable
           corepack prepare pnpm@9.12.0 --activate
-          pnpm -v
 
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
