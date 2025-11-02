@@ -22,7 +22,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.4.0  # Fixed to match package.json
+          version: 10.4.0
 
       - uses: actions/setup-node@v4
         with:
@@ -46,14 +46,10 @@ jobs:
           }
           JSON
 
-      # 🔴 THIS was missing - creates .vercel/output for prebuilt deployment
-      - name: Vercel local build (produce .vercel/output)
+      # Deploy WITHOUT --prebuilt - let Vercel discover the already-built app
+      - name: Deploy to Vercel
         working-directory: apps/admin
-        run: npx vercel@latest build --prod --yes --token "${{ env.VERCEL_TOKEN }}"
-
-      - name: Deploy to Vercel (prebuilt)
-        working-directory: apps/admin
-        run: npx vercel@latest deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}"
+        run: npx vercel@latest deploy --prod --yes --token "${{ env.VERCEL_TOKEN }}"
 
   tenant:
     name: Deploy tenant (CRAN team)
@@ -67,7 +63,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.4.0  # Fixed to match package.json
+          version: 10.4.0
 
       - uses: actions/setup-node@v4
         with:
@@ -91,11 +87,7 @@ jobs:
           }
           JSON
 
-      # 🔴 THIS was missing - creates .vercel/output for prebuilt deployment
-      - name: Vercel local build (produce .vercel/output)
+      # Deploy WITHOUT --prebuilt - let Vercel discover the already-built app
+      - name: Deploy to Vercel
         working-directory: apps/tenant-dashboard
-        run: npx vercel@latest build --prod --yes --token "${{ env.VERCEL_TOKEN }}"
-
-      - name: Deploy to Vercel (prebuilt)
-        working-directory: apps/tenant-dashboard
-        run: npx vercel@latest deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}"
+        run: npx vercel@latest deploy --prod --yes --token "${{ env.VERCEL_TOKEN }}"
