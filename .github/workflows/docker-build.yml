@@ -1,4 +1,4 @@
-name: Docker Build
+name: Build Docker images
 
 on:
   push:
@@ -6,30 +6,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-apps:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [tenant-dashboard, site-renderer, admin]
-    
+        app: [admin, tenant-dashboard, site-renderer]
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup pnpm via Corepack
-        run: |
-          corepack enable
-          corepack install
-          pnpm -v
-      
-      - name: Setup Node.js
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20.19.5'
-      
+          node-version: 20
+          cache: pnpm
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
-      - name: Build packages
+
+      - name: Build shared packages
         run: |
           pnpm --filter @weblynk/tokens build
           pnpm --filter @weblynk/db build
@@ -38,13 +38,19 @@ jobs:
           pnpm --filter @weblynk/ui build
           pnpm --filter @weblynk/blocks build
           pnpm --filter @weblynk/templates build
-      
+
       - name: Build app
         run: pnpm --filter ${{ matrix.app }} build
-      
-      - name: Build Docker image
-        run: |
-          docker build \
-            -f apps/${{ matrix.app }}/Dockerfile \
-            -t ${{ matrix.app }}:latest \
-            .
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          push: false
+          tags: tourism/${{ matrix.app }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
