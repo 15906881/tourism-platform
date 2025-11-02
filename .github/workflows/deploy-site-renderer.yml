@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build site-renderer
+      - name: Build site-renderer with turbo
         run: pnpm turbo run build --filter=site-renderer
 
       - name: Clean any existing Vercel config
@@ -46,13 +46,11 @@ jobs:
           rm -rf .vercel
           rm -f vercel.json
 
-      - name: Deploy to Vercel (personal team)
+      - name: Deploy to Vercel (Vercel will discover the built app)
         working-directory: apps/site-renderer
         run: |
           npx vercel@latest deploy \
-            --prebuilt \
             --prod \
             --yes \
             --token "${{ env.VERCEL_TOKEN }}" \
-            --scope "${{ env.VERCEL_ORG_ID }}" \
-            --project "${{ env.VERCEL_PROJECT_ID }}"
+            --scope "${{ env.VERCEL_ORG_ID }}"
