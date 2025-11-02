@@ -28,7 +28,8 @@
     "ci:build-validation": "./ci-build-validation.sh",
     "ci:db-validation": "./ci-db-validation.sh",
     "ci:security-check": "./quick-security-check.sh",
-    "test:e2e:ci": "playwright test tests/e2e/smoke.spec.ts"
+    "test:e2e:ci": "playwright test tests/e2e/smoke.spec.ts",
+    "preinstall": "node scripts/vercel-preinstall.js"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.8.0",
