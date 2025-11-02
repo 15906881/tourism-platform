@@ -1,0 +1,26 @@
+name: Debug Site-Renderer Team
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check team configuration
+        env:
+          VERCEL_ORG_ID_SR: ${{ secrets.VERCEL_ORG_ID_SR }}
+          VERCEL_TOKEN_SR: ${{ secrets.VERCEL_TOKEN_SR }}
+          VERCEL_PROJECT_ID_SITE: ${{ secrets.VERCEL_PROJECT_ID_SITE }}
+        run: |
+          echo "=== Site-Renderer Secrets Check ==="
+          echo "VERCEL_ORG_ID_SR: ${VERCEL_ORG_ID_SR:0:10}..."  # Show first 10 chars
+          echo "VERCEL_TOKEN_SR exists: $(if [ -n "$VERCEL_TOKEN_SR" ]; then echo 'YES (first 10: '${VERCEL_TOKEN_SR:0:10}'...)'; else echo 'NO'; fi)"
+          echo "VERCEL_PROJECT_ID_SITE: $VERCEL_PROJECT_ID_SITE"
+          
+          echo ""
+          echo "=== Expected vs Actual ==="
+          echo "Expected Team: team_vwUCz0klM98gJGmXcVHVqnwV (personal)"
+          echo "Actual Team from deployments: cranadmin (CRAN team)"
+          echo ""
+          echo "This means the workflow is NOT using VERCEL_ORG_ID_SR!"
