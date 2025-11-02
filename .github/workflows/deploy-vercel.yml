@@ -35,21 +35,27 @@ jobs:
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
 
-      - name: Create .vercel/project.json for admin
+      - name: Build admin app
+        run: pnpm turbo run build --filter=admin
+
+      - name: Create .vercel directory and config
         run: |
           mkdir -p apps/admin/.vercel
           cat > apps/admin/.vercel/project.json <<'JSON'
           {
             "projectId": "${{ env.VERCEL_PROJECT_ID }}",
-            "orgId": "${{ env.VERCEL_ORG_ID }}"
+            "orgId": "${{ env.VERCEL_ORG_ID }}",
+            "settings": {
+              "buildCommand": "cd ../../ && pnpm turbo run build --filter=admin",
+              "outputDirectory": "apps/admin/.next"
+            }
           }
           JSON
 
-      - name: Vercel build (admin)
-        run: npx vercel@latest build --prod --yes --token "${{ env.VERCEL_TOKEN }}" --cwd apps/admin
-
-      - name: Vercel deploy (admin, prebuilt)
-        run: npx vercel@latest deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}" --cwd apps/admin
+      - name: Deploy to Vercel (prebuilt)
+        run: |
+          cd apps/admin
+          npx vercel@latest deploy --prebuilt --prod --token "${{ env.VERCEL_TOKEN }}"
 
   tenant:
     name: Deploy tenant-dashboard
@@ -75,21 +81,27 @@ jobs:
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
 
-      - name: Create .vercel/project.json for tenant-dashboard
+      - name: Build tenant-dashboard app
+        run: pnpm turbo run build --filter=tenant-dashboard
+
+      - name: Create .vercel directory and config
         run: |
           mkdir -p apps/tenant-dashboard/.vercel
           cat > apps/tenant-dashboard/.vercel/project.json <<'JSON'
           {
             "projectId": "${{ env.VERCEL_PROJECT_ID }}",
-            "orgId": "${{ env.VERCEL_ORG_ID }}"
+            "orgId": "${{ env.VERCEL_ORG_ID }}",
+            "settings": {
+              "buildCommand": "cd ../../ && pnpm turbo run build --filter=tenant-dashboard",
+              "outputDirectory": "apps/tenant-dashboard/.next"
+            }
           }
           JSON
 
-      - name: Vercel build (tenant-dashboard)
-        run: npx vercel@latest build --prod --yes --token "${{ env.VERCEL_TOKEN }}" --cwd apps/tenant-dashboard
-
-      - name: Vercel deploy (tenant-dashboard, prebuilt)
-        run: npx vercel@latest deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}" --cwd apps/tenant-dashboard
+      - name: Deploy to Vercel (prebuilt)
+        run: |
+          cd apps/tenant-dashboard
+          npx vercel@latest deploy --prebuilt --prod --token "${{ env.VERCEL_TOKEN }}"
 
   site:
     name: Deploy site-renderer
@@ -115,18 +127,24 @@ jobs:
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
 
-      - name: Create .vercel/project.json for site-renderer
+      - name: Build site-renderer app
+        run: pnpm turbo run build --filter=site-renderer
+
+      - name: Create .vercel directory and config
         run: |
           mkdir -p apps/site-renderer/.vercel
           cat > apps/site-renderer/.vercel/project.json <<'JSON'
           {
             "projectId": "${{ env.VERCEL_PROJECT_ID }}",
-            "orgId": "${{ env.VERCEL_ORG_ID }}"
+            "orgId": "${{ env.VERCEL_ORG_ID }}",
+            "settings": {
+              "buildCommand": "cd ../../ && pnpm turbo run build --filter=site-renderer",
+              "outputDirectory": "apps/site-renderer/.next"
+            }
           }
           JSON
 
-      - name: Vercel build (site-renderer)
-        run: npx vercel@latest build --prod --yes --token "${{ env.VERCEL_TOKEN }}" --cwd apps/site-renderer
-
-      - name: Vercel deploy (site-renderer, prebuilt)
-        run: npx vercel@latest deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}" --cwd apps/site-renderer
+      - name: Deploy to Vercel (prebuilt)
+        run: |
+          cd apps/site-renderer
+          npx vercel@latest deploy --prebuilt --prod --token "${{ env.VERCEL_TOKEN }}"
