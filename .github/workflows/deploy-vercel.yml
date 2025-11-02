@@ -32,13 +32,17 @@ jobs:
         run: pnpm turbo run build --filter=admin
 
       - name: Deploy admin to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
         run: |
           npx vercel@latest deploy \
             --prod \
             --cwd apps/admin \
-            --project ${{ secrets.VERCEL_PROJECT_ID_ADMIN }} \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }}
+            --token "$VERCEL_TOKEN" \
+            --scope "$VERCEL_ORG_ID" \
+            --project "$VERCEL_PROJECT_ID"
 
   tenant:
     name: Tenant Dashboard → Vercel
@@ -65,13 +69,17 @@ jobs:
         run: pnpm turbo run build --filter=tenant-dashboard
 
       - name: Deploy tenant-dashboard to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_TENANT }}
         run: |
           npx vercel@latest deploy \
             --prod \
             --cwd apps/tenant-dashboard \
-            --project ${{ secrets.VERCEL_PROJECT_ID_TENANT }} \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }}
+            --token "$VERCEL_TOKEN" \
+            --scope "$VERCEL_ORG_ID" \
+            --project "$VERCEL_PROJECT_ID"
 
   site:
     name: Site Renderer → Vercel
@@ -98,10 +106,14 @@ jobs:
         run: pnpm turbo run build --filter=site-renderer
 
       - name: Deploy site-renderer to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_SITE }}
         run: |
           npx vercel@latest deploy \
             --prod \
             --cwd apps/site-renderer \
-            --project ${{ secrets.VERCEL_PROJECT_ID_SITE }} \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_TEAM_ID }}
+            --token "$VERCEL_TOKEN" \
+            --scope "$VERCEL_ORG_ID" \
+            --project "$VERCEL_PROJECT_ID"
