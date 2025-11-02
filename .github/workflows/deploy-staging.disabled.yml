@@ -1,0 +1,55 @@
+name: Deploy to Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'App to deploy'
+        required: true
+        default: 'tenant-dashboard'
+        type: choice
+        options:
+        - tenant-dashboard
+        - admin
+        - site-renderer
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: tourism-api
+  ECS_CLUSTER: tourism-platform-cluster
+  ECS_SERVICE: tourism-api-staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Login to ECR
+      id: ecr
+      uses: aws-actions/amazon-ecr-login@v2
+    
+    - name: Build Docker image
+      run: |
+        APP="${{ github.event.inputs.app }}"
+        # Build the image
+        docker build -t ${{ steps.ecr.outputs.registry }}/$ECR_REPOSITORY:staging \
+          --build-arg app=$APP \
+          -f apps/$APP/Dockerfile .
+        
+        echo "Image built successfully"
+        echo "TODO: Push to ECR and update ECS service"
+    
+    - name: Update ECS service
+      run: |
+        echo "For now, manually update ECS service to use port 8000"
+        echo "Or create new task definition with correct port mapping"
