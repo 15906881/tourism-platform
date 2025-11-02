@@ -1,9 +1,9 @@
-name: Deploy monorepo apps to Vercel
+name: Deploy admin + tenant (CRAN team)
 
 on:
   push:
     branches:
-      - pristine.04
+      - cran-deploy  # 👈 Changed from pristine.04 to cran-deploy
   workflow_dispatch: {}
 
 env:
@@ -46,7 +46,6 @@ jobs:
           }
           JSON
 
-      # Deploy WITHOUT --prebuilt - let Vercel discover the already-built app
       - name: Deploy to Vercel
         working-directory: apps/admin
         run: npx vercel@latest deploy --prod --yes --token "${{ env.VERCEL_TOKEN }}"
@@ -87,7 +86,6 @@ jobs:
           }
           JSON
 
-      # Deploy WITHOUT --prebuilt - let Vercel discover the already-built app
       - name: Deploy to Vercel
         working-directory: apps/tenant-dashboard
         run: npx vercel@latest deploy --prod --yes --token "${{ env.VERCEL_TOKEN }}"
