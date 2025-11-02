@@ -11,18 +11,24 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    # 1) matrix = NO SECRETS HERE
     strategy:
       matrix:
         app:
           - name: admin
-            filter: ./apps/admin...
-            vercel_project: \${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+            filter: admin
           - name: tenant-dashboard
-            filter: ./apps/tenant-dashboard...
-            vercel_project: \${{ secrets.VERCEL_PROJECT_ID_TENANT }}
+            filter: tenant-dashboard
           - name: site-renderer
-            filter: ./apps/site-renderer...
-            vercel_project: \${{ secrets.VERCEL_PROJECT_ID_SITE }}
+            filter: site-renderer
+
+    # 2) secrets go here (job / step level)
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID_ADMIN: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+      VERCEL_PROJECT_ID_TENANT: ${{ secrets.VERCEL_PROJECT_ID_TENANT }}
+      VERCEL_PROJECT_ID_SITE: ${{ secrets.VERCEL_PROJECT_ID_SITE }}
 
     steps:
       - name: Checkout repo
@@ -45,18 +51,25 @@ jobs:
 
       - name: Build app
         run: |
-          echo "➡️ Building \${{ matrix.app.name }}"
-          pnpm --filter "\${{ matrix.app.filter }}" build
+          echo "➡️ Building ${{ matrix.app.name }}"
+          pnpm --filter "${{ matrix.app.filter }}..." build
 
+      # 3) pick the right PROJECT_ID based on app name
       - name: Deploy prebuilt to Vercel
-        env:
-          VERCEL_TOKEN: \${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: \${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: \${{ matrix.app.vercel_project }}
         run: |
+          if [ "${{ matrix.app.name }}" = "admin" ]; then
+            PROJECT_ID="$VERCEL_PROJECT_ID_ADMIN"
+          elif [ "${{ matrix.app.name }}" = "tenant-dashboard" ]; then
+            PROJECT_ID="$VERCEL_PROJECT_ID_TENANT"
+          else
+            PROJECT_ID="$VERCEL_PROJECT_ID_SITE"
+          fi
+
+          echo "➡️ Deploying ${{ matrix.app.name }} with project ID: $PROJECT_ID"
+
           npx vercel@latest deploy \
             --prebuilt \
-            --token "\$VERCEL_TOKEN" \
-            --scope "\$VERCEL_ORG_ID" \
-            --project "\$VERCEL_PROJECT_ID" \
+            --token "$VERCEL_TOKEN" \
+            --scope "$VERCEL_ORG_ID" \
+            --project "$PROJECT_ID" \
             --prod
