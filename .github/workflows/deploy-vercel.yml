@@ -19,34 +19,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      # 1) Node first
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
 
-      - name: Enable corepack + pin pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@9.12.0 --activate
+      # 2) Then pnpm (reliable)
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
 
+      # 3) Install workspace deps
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
 
+      # 4) Create per-app vercel config (with real env values)
       - name: Create .vercel directory and config
         working-directory: apps/admin
         run: |
           mkdir -p .vercel
-          cat > .vercel/project.json <<'JSON'
+          cat > .vercel/project.json <<EOF
           {
             "projectId": "${{ env.VERCEL_PROJECT_ID }}",
             "orgId": "${{ env.VERCEL_ORG_ID }}"
           }
-          JSON
+          EOF
 
+      # 5) Build locally on the runner
       - name: Vercel build (admin)
         working-directory: apps/admin
         run: npx vercel@latest build --prod --yes --token "${{ env.VERCEL_TOKEN }}"
 
+      # 6) Deploy the prebuilt output
       - name: Deploy to Vercel (prebuilt)
         working-directory: apps/admin
         run: npx vercel@latest deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}"
@@ -60,15 +67,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
 
-      - name: Enable corepack + pin pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@9.12.0 --activate
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
 
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
@@ -77,12 +85,12 @@ jobs:
         working-directory: apps/tenant-dashboard
         run: |
           mkdir -p .vercel
-          cat > .vercel/project.json <<'JSON'
+          cat > .vercel/project.json <<EOF
           {
             "projectId": "${{ env.VERCEL_PROJECT_ID }}",
             "orgId": "${{ env.VERCEL_ORG_ID }}"
           }
-          JSON
+          EOF
 
       - name: Vercel build (tenant)
         working-directory: apps/tenant-dashboard
@@ -101,15 +109,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
 
-      - name: Enable corepack + pin pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@9.12.0 --activate
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
 
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
@@ -118,12 +127,12 @@ jobs:
         working-directory: apps/site-renderer
         run: |
           mkdir -p .vercel
-          cat > .vercel/project.json <<'JSON'
+          cat > .vercel/project.json <<EOF
           {
             "projectId": "${{ env.VERCEL_PROJECT_ID }}",
             "orgId": "${{ env.VERCEL_ORG_ID }}"
           }
-          JSON
+          EOF
 
       - name: Vercel build (site)
         working-directory: apps/site-renderer
