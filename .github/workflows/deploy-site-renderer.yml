@@ -1,4 +1,4 @@
-name: Deploy site-renderer (personal vercel team)
+name: Deploy site-renderer (personal team only)
 
 on:
   push:
@@ -9,42 +9,46 @@ on:
       - ".github/workflows/deploy-site-renderer.yml"
   workflow_dispatch: {}
 
+env:
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
 jobs:
-  site:
+  site-renderer:
+    name: Deploy site-renderer to personal team
     runs-on: ubuntu-latest
     env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_SR }}           # 👈 personal team
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_SITE }} # existing project id
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_SR }}           # PERSONAL TEAM ONLY
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_SITE }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - name: Setup pnpm (matches package.json)
+        uses: pnpm/action-setup@v4
         with:
-          version: 10.4.0  # 👈 FIXED: matches package.json
+          version: 10.4.0
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
 
-      - name: Install deps (root)
+      - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build site-renderer only
+      - name: Build site-renderer
         run: pnpm turbo run build --filter=site-renderer
 
-      - name: Create .vercel config
+      - name: Configure Vercel project
         working-directory: apps/site-renderer
         run: |
           mkdir -p .vercel
-          cat > .vercel/project.json <<'JSON'
-          {
+          echo '{
             "orgId": "${{ env.VERCEL_ORG_ID }}",
             "projectId": "${{ env.VERCEL_PROJECT_ID }}"
-          }
-          JSON
+          }' > .vercel/project.json
 
-      - name: Deploy to Vercel
+      - name: Deploy to Vercel (personal team)
         working-directory: apps/site-renderer
         run: npx vercel@latest deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}"
