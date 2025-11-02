@@ -34,15 +34,21 @@ jobs:
       - name: Build ONLY site-renderer
         run: pnpm turbo run build --filter=site-renderer
 
+      - name: Verify build output
+        working-directory: apps/site-renderer
+        run: |
+          echo "📁 Checking build output..."
+          ls -la .next/
+          echo "📄 Essential files:"
+          [ -f ".next/routes-manifest.json" ] && echo "✅ routes-manifest.json" || echo "❌ routes-manifest.json MISSING"
+          [ -f ".next/build-manifest.json" ] && echo "✅ build-manifest.json" || echo "❌ build-manifest.json MISSING"
+          [ -d ".next/server" ] && echo "✅ server directory" || echo "❌ server directory MISSING"
+          [ -d ".next/static" ] && echo "✅ static directory" || echo "❌ static directory MISSING"
+
       - name: Deploy to personal Vercel account
         working-directory: apps/site-renderer
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_SR }}  # Your personal account token
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_SR }}
         run: |
-          echo "🔧 Deploying to personal Vercel account (CRANADMIN)..."
-          
-          # Deploy without team scope (uses personal account)
-          npx vercel@latest deploy \
-            --prod \
-            --yes \
-            --token "$VERCEL_TOKEN"
+          echo "🔧 Deploying to personal Vercel account..."
+          npx vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"

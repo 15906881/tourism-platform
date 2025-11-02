@@ -1,14 +1,16 @@
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-luxury-50 via-cream-50 to-sage-50">
-      <div className="text-center">
-        <h1 className="text-6xl font-display text-luxury-900 mb-4">
-          Weblynk Platform
-        </h1>
-        <p className="text-xl text-luxury-600">
-          Site Renderer - Coming Soon
-        </p>
-      </div>
+    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
+      <h1>✅ Site Renderer - Home Page</h1>
+      <p>If you can see this, the deployment is working!</p>
+      <p>Current time: {new Date().toISOString()}</p>
+      <p>Environment: {process.env.NODE_ENV}</p>
+      <nav>
+        <ul>
+          <li><a href="/test">Test Page</a></li>
+          <li><a href="/api/health">Health Check</a></li>
+        </ul>
+      </nav>
     </div>
-  );
+  )
 }
