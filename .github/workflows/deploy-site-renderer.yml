@@ -40,15 +40,19 @@ jobs:
       - name: Build site-renderer
         run: pnpm turbo run build --filter=site-renderer
 
-      - name: Configure Vercel project
+      - name: Clean any existing Vercel config
         working-directory: apps/site-renderer
         run: |
-          mkdir -p .vercel
-          echo '{
-            "orgId": "${{ env.VERCEL_ORG_ID }}",
-            "projectId": "${{ env.VERCEL_PROJECT_ID }}"
-          }' > .vercel/project.json
+          rm -rf .vercel
+          rm -f vercel.json
 
       - name: Deploy to Vercel (personal team)
         working-directory: apps/site-renderer
-        run: npx vercel@latest deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}"
+        run: |
+          npx vercel@latest deploy \
+            --prebuilt \
+            --prod \
+            --yes \
+            --token "${{ env.VERCEL_TOKEN }}" \
+            --scope "${{ env.VERCEL_ORG_ID }}" \
+            --project "${{ env.VERCEL_PROJECT_ID }}"
