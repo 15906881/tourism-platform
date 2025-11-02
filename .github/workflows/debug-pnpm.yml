@@ -1,0 +1,48 @@
+name: Debug pnpm availability
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - name: Check PATH before pnpm setup
+        run: |
+          echo "=== PATH before pnpm setup ==="
+          echo $PATH
+          which pnpm || echo "pnpm not found"
+          command -v pnpm || echo "pnpm command not found"
+          
+      - name: Setup pnpm via action
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+          
+      - name: Check PATH after pnpm action
+        run: |
+          echo "=== PATH after pnpm action ==="
+          echo $PATH
+          which pnpm || echo "pnpm not found"
+          command -v pnpm || echo "pnpm command not found"
+          pnpm -v || echo "pnpm -v failed"
+          
+      - name: Install pnpm globally as fallback
+        run: |
+          npm install -g pnpm@9.12.0
+          echo "=== PATH after npm install -g ==="
+          echo $PATH
+          which pnpm
+          pnpm -v
+          
+      - name: Try pnpm install
+        run: |
+          echo "=== Trying pnpm install ==="
+          pnpm install --no-frozen-lockfile || echo "pnpm install failed"
