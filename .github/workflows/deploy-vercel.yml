@@ -1,0 +1,65 @@
+name: Build & Deploy to Vercel (monorepo)
+
+on:
+  push:
+    branches:
+      - vercel/connect-projects
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        app:
+          - name: admin
+            filter: ./apps/admin...
+            vercel_project: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+            output_dir: apps/admin/.next
+          - name: tenant-dashboard
+            filter: ./apps/tenant-dashboard...
+            vercel_project: ${{ secrets.VERCEL_PROJECT_ID_TENANT }}
+            output_dir: apps/tenant-dashboard/.next
+          - name: site-renderer
+            filter: ./apps/site-renderer...
+            vercel_project: ${{ secrets.VERCEL_PROJECT_ID_SITE }}
+            output_dir: apps/site-renderer/.next
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Use pnpm 9.12.0
+        run: corepack prepare pnpm@9.12.0 --activate
+
+      - name: Install deps (monorepo)
+        run: pnpm install
+
+      - name: Build app
+        run: |
+          echo "➡️ Building ${{ matrix.app.name }}"
+          pnpm --filter "${{ matrix.app.filter }}" build
+
+      - name: Deploy prebuilt to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ matrix.app.vercel_project }}
+        run: |
+          npx vercel@latest deploy \
+            --prebuilt \
+            --token "$VERCEL_TOKEN" \
+            --scope "$VERCEL_ORG_ID" \
+            --project "$VERCEL_PROJECT_ID" \
+            --prod
