@@ -1,6 +1,9 @@
-name: Upload Source Maps to Sentry
+name: Upload Sourcemaps
+
 on:
-  deployment:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   upload-sourcemaps:
@@ -10,57 +13,25 @@ jobs:
         with:
           fetch-depth: 0
       
+      # Add pnpm setup
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
-      
+
+      # Add pnpm install
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      
-      - name: Set Sentry release
-        run: echo "SENTRY_RELEASE=${GITHUB_SHA}" >> $GITHUB_ENV
-      
-      - name: Build all apps
-        run: pnpm build
+        run: pnpm install
+
+      - name: Upload sourcemaps to Sentry
+        run: pnpm run upload-sourcemaps
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_RELEASE: ${{ env.SENTRY_RELEASE }}
-      
-      - name: Upload sourcemaps (admin)
-        working-directory: apps/admin
-        run: |
-          npx sentry-cli releases new "$SENTRY_RELEASE"
-          npx sentry-cli releases files "$SENTRY_RELEASE" upload-sourcemaps .next \
-            --rewrite --url-prefix "~/_next" --ext js --ext map
-          npx sentry-cli releases finalize "$SENTRY_RELEASE"
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: tourism-admin
-      
-      - name: Upload sourcemaps (site-renderer)
-        working-directory: apps/site-renderer
-        run: |
-          npx sentry-cli releases new "$SENTRY_RELEASE"
-          npx sentry-cli releases files "$SENTRY_RELEASE" upload-sourcemaps .next \
-            --rewrite --url-prefix "~/_next" --ext js --ext map
-          npx sentry-cli releases finalize "$SENTRY_RELEASE"
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: tourism-site-renderer
-      
-      - name: Upload sourcemaps (tenant-dashboard)
-        working-directory: apps/tenant-dashboard
-        run: |
-          npx sentry-cli releases new "$SENTRY_RELEASE"
-          npx sentry-cli releases files "$SENTRY_RELEASE" upload-sourcemaps .next \
-            --rewrite --url-prefix "~/_next" --ext js --ext map
-          npx sentry-cli releases finalize "$SENTRY_RELEASE"
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: tourism-tenant-dashboard
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
