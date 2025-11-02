@@ -3,7 +3,7 @@ name: Build & Deploy 3 Vercel apps
 on:
   push:
     branches:
-      - vercel/connect-projects
+      - pristine.04
   workflow_dispatch:
 
 jobs:
