@@ -2,7 +2,7 @@
   "name": "tourism-platform",
   "version": "1.0.0",
   "private": true,
-  "packageManager": "pnpm@9.12.0",
+  "packageManager": "pnpm@10.4.0",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -46,7 +46,7 @@
     "typescript": "^5.9.3"
   },
   "engines": {
-    "node": ">=20.10.0"
+    "node": "20.x"
   },
   "dependencies": {
     "@trpc/client": "^10.45.2"
