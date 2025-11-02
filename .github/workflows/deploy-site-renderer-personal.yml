@@ -1,20 +1,18 @@
-name: Deploy site-renderer (personal)
+name: Deploy site-renderer (personal account)
 
 on:
   push:
     branches:
       - pristine.04
+    paths:
+      - "apps/site-renderer/**"
+      - ".github/workflows/deploy-site-renderer-personal.yml"
   workflow_dispatch: {}
 
 jobs:
   site:
-    name: Deploy site-renderer to personal team
+    name: Deploy site-renderer to personal account
     runs-on: ubuntu-latest
-    env:
-      # personal team values
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_SR }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_SITE }}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_SR }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,41 +34,15 @@ jobs:
       - name: Build ONLY site-renderer
         run: pnpm turbo run build --filter=site-renderer
 
-      - name: Create vercel.json to skip build
+      - name: Deploy to personal Vercel account
         working-directory: apps/site-renderer
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_SR }}  # Your personal account token
         run: |
-          cat > vercel.json <<'JSON'
-          {
-            "version": 2,
-            "builds": [
-              {
-                "src": "package.json",
-                "use": "@vercel/static-build",
-                "config": {
-                  "zeroConfig": true
-                }
-              }
-            ],
-            "buildCommand": "echo 'Already built by GitHub Actions'",
-            "outputDirectory": ".next"
-          }
-          JSON
-
-      - name: Create .vercel directory and config
-        working-directory: apps/site-renderer
-        run: |
-          mkdir -p .vercel
-          cat > .vercel/project.json <<'JSON'
-          {
-            "projectId": "${{ env.VERCEL_PROJECT_ID }}",
-            "orgId": "${{ env.VERCEL_ORG_ID }}"
-          }
-          JSON
-
-      - name: Vercel local build (creates .vercel/output)
-        working-directory: apps/site-renderer
-        run: npx vercel@latest build --prod --yes --token "${{ env.VERCEL_TOKEN }}"
-
-      - name: Deploy prebuilt to personal
-        working-directory: apps/site-renderer
-        run: npx vercel@latest deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}"
+          echo "🔧 Deploying to personal Vercel account (CRANADMIN)..."
+          
+          # Deploy without team scope (uses personal account)
+          npx vercel@latest deploy \
+            --prod \
+            --yes \
+            --token "$VERCEL_TOKEN"
