@@ -19,24 +19,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1) Node first
+      # 1) Setup pnpm FIRST (before Node with pnpm cache)
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.0
+
+      # 2) Then setup Node with pnpm cache (now pnpm exists)
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
 
-      # 2) Then pnpm (reliable)
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.12.0
-
       # 3) Install workspace deps
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
 
-      # 4) Create per-app vercel config (with real env values)
+      # 4) Create per-app vercel config
       - name: Create .vercel directory and config
         working-directory: apps/admin
         run: |
@@ -67,16 +67,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.0
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.12.0
 
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
@@ -109,16 +109,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.0
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.12.0
 
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
