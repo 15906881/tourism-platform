@@ -1,4 +1,4 @@
-name: Deploy admin + tenant (cran team)
+name: Deploy monorepo apps to Vercel
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
   workflow_dispatch: {}
 
 env:
-  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
 jobs:
   admin:
@@ -19,33 +19,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          version: 10.4.0  # 👈 FIXED: matches package.json
+          version: 10.4.0  # Fixed to match package.json
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
 
-      - name: Install deps
+      - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build admin only
+      - name: Build admin with turbo
         run: pnpm turbo run build --filter=admin
 
-      - name: Create .vercel config
+      - name: Create .vercel directory and config
         working-directory: apps/admin
         run: |
           mkdir -p .vercel
           cat > .vercel/project.json <<'JSON'
           {
-            "orgId": "${{ env.VERCEL_ORG_ID }}",
-            "projectId": "${{ env.VERCEL_PROJECT_ID }}"
+            "projectId": "${{ env.VERCEL_PROJECT_ID }}",
+            "orgId": "${{ env.VERCEL_ORG_ID }}"
           }
           JSON
 
-      - name: Deploy to Vercel
+      # 🔴 THIS was missing - creates .vercel/output for prebuilt deployment
+      - name: Vercel local build (produce .vercel/output)
+        working-directory: apps/admin
+        run: npx vercel@latest build --prod --yes --token "${{ env.VERCEL_TOKEN }}"
+
+      - name: Deploy to Vercel (prebuilt)
         working-directory: apps/admin
         run: npx vercel@latest deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}"
 
@@ -58,9 +64,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          version: 10.4.0  # 👈 FIXED: matches package.json
+          version: 10.4.0  # Fixed to match package.json
 
       - uses: actions/setup-node@v4
         with:
@@ -84,6 +91,11 @@ jobs:
           }
           JSON
 
-      - name: Deploy to Vercel
+      # 🔴 THIS was missing - creates .vercel/output for prebuilt deployment
+      - name: Vercel local build (produce .vercel/output)
+        working-directory: apps/tenant-dashboard
+        run: npx vercel@latest build --prod --yes --token "${{ env.VERCEL_TOKEN }}"
+
+      - name: Deploy to Vercel (prebuilt)
         working-directory: apps/tenant-dashboard
         run: npx vercel@latest deploy --prebuilt --prod --yes --token "${{ env.VERCEL_TOKEN }}"
