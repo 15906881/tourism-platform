@@ -10,7 +10,7 @@ jobs:
   site-renderer:
     runs-on: ubuntu-latest
     env:
-      # personal / cranadmin TEAM
+      # your PERSONAL / CRANADMIN team secrets
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_SR }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_SITE }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_SR }}
@@ -31,17 +31,24 @@ jobs:
           cache: pnpm
 
       - name: Install deps (root)
-        run: |
-          pnpm install --no-frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
-      - name: Create Vercel project config
+      # 👇 this is the important change
+      - name: Write local Vercel project config (override remote)
         working-directory: apps/site-renderer
         run: |
           mkdir -p .vercel
           cat > .vercel/project.json <<'JSON'
           {
+            "orgId": "$VERCEL_ORG_ID",
             "projectId": "$VERCEL_PROJECT_ID",
-            "orgId": "$VERCEL_ORG_ID"
+            "settings": {
+              "framework": "nextjs",
+              "installCommand": "",
+              "buildCommand": "",
+              "outputDirectory": ".vercel/output",
+              "rootDirectory": "apps/site-renderer"
+            }
           }
           JSON
 
@@ -56,8 +63,8 @@ jobs:
       - name: Deploy prebuilt to Vercel
         working-directory: apps/site-renderer
         run: |
-          npx vercel@latest deploy \
-            --prebuilt \
-            --prod \
-            --yes \
-            --token "$VERCEL_TOKEN"
+            npx vercel@latest deploy \
+              --prebuilt \
+              --prod \
+              --yes \
+              --token "$VERCEL_TOKEN"
