@@ -1,16 +1,14 @@
-name: Deploy site-renderer to personal account
+name: Deploy site-renderer (host-only)
 
 on:
   push:
-    branches:
-      - pristine.04
+    branches: [pristine.04]
   workflow_dispatch: {}
 
 jobs:
-  site-renderer:
+  deploy:
     runs-on: ubuntu-latest
     env:
-      # 🔐 personal team secrets (already set)
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_SR }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_SITE }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_SR }}
@@ -30,44 +28,38 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      # 🚫 Avoid running root preinstall/postinstall scripts that try to write /packages
-      - name: Install deps (root; ignore scripts)
-        run: pnpm install --no-frozen-lockfile --ignore-scripts
+      # 1) Install & build everything we need
+      - name: Install deps (root)
+        run: pnpm install --no-frozen-lockfile
 
-      # 🏗️ Build only what we need (deps + site-renderer)
-      - name: Build packages and app
-        run: |
-          pnpm turbo run build --filter='@weblynk/ui' --filter='@weblynk/blocks' --filter='@weblynk/templates'
-          pnpm turbo run build --filter=site-renderer
+      - name: Build site-renderer (and its internal deps)
+        run: pnpm turbo run build --filter=site-renderer
 
-      # 🧹 ensure we don't inherit any old project links
-      - name: Remove any existing .vercel config
+      # 2) Assert the Next build exists (defensive)
+      - name: Verify Next build output exists
         run: |
-          find . -name ".vercel" -type d -exec rm -rf {} + || true
-          find . -name "vercel.json" -type f -delete || true
+          test -f apps/site-renderer/.next/build-manifest.json
+          test -d apps/site-renderer/.next/static
 
-      # 🔑 pull prod envs into local file so vercel build can use them
-      - name: Pull Vercel envs (production)
+      # 3) Point this checkout at the correct Vercel project (IN APP DIRECTORY)
+      - name: Write .vercel/project.json (app dir)
+        working-directory: apps/site-renderer
         run: |
-          npx vercel@latest env pull apps/site-renderer/.env.production.local \
-            --yes \
-            --token "$VERCEL_TOKEN"
+          mkdir -p .vercel
+          cat > .vercel/project.json <<EOF
+          {
+            "orgId": "${VERCEL_ORG_ID}",
+            "projectId": "${VERCEL_PROJECT_ID}"
+          }
+          EOF
 
-      # 🧱 produce the prebuilt artifact LOCALLY in CI: .vercel/output
-      - name: Create prebuilt output (.vercel/output)
+      # 4) Deploy the PREBUILT output from the APP directory (no server-side build)
+      - name: Deploy (host-only, prebuilt)
+        working-directory: apps/site-renderer
         run: |
-          npx vercel@latest build \
-            --cwd apps/site-renderer \
-            --prod \
-            --yes \
-            --token "$VERCEL_TOKEN"
-
-      # 🚀 deploy the prebuilt artifact using the output directory directly
-      - name: Deploy prebuilt to Vercel
-        run: |
-          npx vercel@latest deploy \
+          npx vercel@48.8.0 deploy . \
             --prebuilt \
             --prod \
             --yes \
-            --token "$VERCEL_TOKEN" \
-            apps/site-renderer/.vercel/output
+            --scope cranadmin \
+            --token "$VERCEL_TOKEN"
