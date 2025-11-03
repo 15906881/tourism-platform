@@ -60,19 +60,26 @@ jobs:
           echo "Wrote .vercel/project.json:"
           cat .vercel/project.json
 
+      # 🔧 Ensure shell & PATH are available to the Vercel builder
+      - name: Ensure shell & PATH for vercel build
+        run: |
+          echo "SHELL=/bin/bash" >> $GITHUB_ENV
+          echo "PATH=$PATH:/bin:/usr/bin" >> $GITHUB_ENV
+          which sh || true
+          ls -l /bin/sh || true
+
       # 🔑 pull prod envs into local file so vercel build can use them
       - name: Pull Vercel envs (production)
-        working-directory: apps/site-renderer
         run: |
-          npx vercel@latest env pull .env.production.local \
+          npx vercel@latest env pull apps/site-renderer/.env.production.local \
             --yes \
             --token "$VERCEL_TOKEN"
 
       # 🧱 produce the prebuilt artifact LOCALLY in CI: .vercel/output
       - name: Create prebuilt output (.vercel/output)
-        working-directory: apps/site-renderer
         run: |
           npx vercel@latest build \
+            --cwd apps/site-renderer \
             --prod \
             --yes \
             --token "$VERCEL_TOKEN"
