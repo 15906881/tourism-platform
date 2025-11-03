@@ -46,7 +46,7 @@ jobs:
           find . -name ".vercel" -type d -exec rm -rf {} + || true
           find . -name "vercel.json" -type f -delete || true
 
-      # 🔗 write the correct project link for THIS app
+      # 🔗 write the correct project link for THIS app with overridden settings
       - name: Write .vercel/project.json (site-renderer)
         working-directory: apps/site-renderer
         run: |
@@ -54,7 +54,13 @@ jobs:
           cat > .vercel/project.json <<'JSON'
           {
             "orgId": "$VERCEL_ORG_ID",
-            "projectId": "$VERCEL_PROJECT_ID"
+            "projectId": "$VERCEL_PROJECT_ID",
+            "settings": {
+              "installCommand": null,
+              "buildCommand": null,
+              "outputDirectory": null,
+              "framework": "nextjs"
+            }
           }
           JSON
           echo "Wrote .vercel/project.json:"
@@ -66,25 +72,6 @@ jobs:
           npx vercel@latest env pull apps/site-renderer/.env.production.local \
             --yes \
             --token "$VERCEL_TOKEN"
-
-      # 🐛 Debug shell availability
-      - name: Debug shell availability
-        run: |
-          echo "SHELL=$SHELL"
-          which bash || true
-          which sh || true
-          ls -l /bin/sh || true
-
-      # ✅ make sure /bin/sh exists so vercel build can run the Install Command
-      - name: Ensure /bin/sh exists for vercel build
-        run: |
-          set -euxo pipefail
-          if [ ! -x /bin/sh ]; then
-            echo "No /bin/sh found. Creating symlink to /bin/bash..."
-            sudo ln -s /bin/bash /bin/sh
-          fi
-          which sh
-          ls -l /bin/sh
 
       # 🧱 produce the prebuilt artifact LOCALLY in CI: .vercel/output
       - name: Create prebuilt output (.vercel/output)
