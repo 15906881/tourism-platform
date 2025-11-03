@@ -59,6 +59,7 @@ jobs:
               "installCommand": null,
               "buildCommand": null,
               "outputDirectory": null,
+              "rootDirectory": null,
               "framework": "nextjs"
             }
           }
@@ -82,7 +83,7 @@ jobs:
             --yes \
             --token "$VERCEL_TOKEN"
 
-      # 🚀 deploy the prebuilt artifact from repo root (fixes path doubling)
+      # 🚀 deploy the prebuilt artifact from repo root
       - name: Deploy prebuilt to Vercel
         run: |
           npx vercel@latest deploy \
