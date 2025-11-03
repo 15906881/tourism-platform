@@ -46,27 +46,6 @@ jobs:
           find . -name ".vercel" -type d -exec rm -rf {} + || true
           find . -name "vercel.json" -type f -delete || true
 
-      # 🔗 write the correct project link for THIS app with overridden settings
-      - name: Write .vercel/project.json (site-renderer)
-        working-directory: apps/site-renderer
-        run: |
-          mkdir -p .vercel
-          cat > .vercel/project.json <<'JSON'
-          {
-            "orgId": "$VERCEL_ORG_ID",
-            "projectId": "$VERCEL_PROJECT_ID",
-            "settings": {
-              "installCommand": null,
-              "buildCommand": null,
-              "outputDirectory": null,
-              "rootDirectory": null,
-              "framework": "nextjs"
-            }
-          }
-          JSON
-          echo "Wrote .vercel/project.json:"
-          cat .vercel/project.json
-
       # 🔑 pull prod envs into local file so vercel build can use them
       - name: Pull Vercel envs (production)
         run: |
@@ -83,7 +62,7 @@ jobs:
             --yes \
             --token "$VERCEL_TOKEN"
 
-      # 🚀 deploy the prebuilt artifact from repo root
+      # 🚀 deploy the prebuilt artifact using the output directory directly
       - name: Deploy prebuilt to Vercel
         run: |
           npx vercel@latest deploy \
@@ -91,4 +70,4 @@ jobs:
             --prod \
             --yes \
             --token "$VERCEL_TOKEN" \
-            apps/site-renderer
+            apps/site-renderer/.vercel/output
