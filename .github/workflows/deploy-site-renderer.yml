@@ -1,4 +1,68 @@
-name: Deploy site-renderer (personal team only)
+name: Deploy site-renderer to personal account
+
+on:
+  push:
+    branches:
+      - pristine.04
+  workflow_dispatch: {}
+
+jobs:
+  site-renderer:
+    runs-on: ubuntu-latest
+    env:
+      # personal / cranadmin TEAM
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_SR }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_SITE }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_SR }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install deps (root)
+        run: |
+          # that preinstall in your repo tries to copy to /packages and fails
+          # but install still finishes, so we just let it run
+          pnpm install --no-frozen-lockfile
+
+      - name: Create Vercel project config
+        working-directory: apps/site-renderer
+        run: |
+          mkdir -p .vercel
+          cat > .vercel/project.json <<'JSON'
+          {
+            "projectId": "${{ env.VERCEL_PROJECT_ID }}",
+            "orgId": "${{ env.VERCEL_ORG_ID }}"
+          }
+          JSON
+
+      - name: Build with Vercel (local / prebuilt)
+        working-directory: apps/site-renderer
+        run: |
+          npx vercel@latest build \
+            --prod \
+            --yes \
+            --token "$VERCEL_TOKEN"
+
+      - name: Deploy prebuilt to Vercel
+        working-directory: apps/site-renderer
+        run: |
+          npx vercel@latest deploy \
+            --prebuilt \
+            --prod \
+            --yes \
+            --token "$VERCEL_TOKEN"name: Deploy site-renderer (personal team only)
 
 on:
   push:
