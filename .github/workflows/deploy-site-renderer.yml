@@ -32,8 +32,6 @@ jobs:
 
       - name: Install deps (root)
         run: |
-          # that preinstall in your repo tries to copy to /packages and fails
-          # but install still finishes, so we just let it run
           pnpm install --no-frozen-lockfile
 
       - name: Create Vercel project config
@@ -42,8 +40,8 @@ jobs:
           mkdir -p .vercel
           cat > .vercel/project.json <<'JSON'
           {
-            "projectId": "${{ env.VERCEL_PROJECT_ID }}",
-            "orgId": "${{ env.VERCEL_ORG_ID }}"
+            "projectId": "$VERCEL_PROJECT_ID",
+            "orgId": "$VERCEL_ORG_ID"
           }
           JSON
 
@@ -62,59 +60,4 @@ jobs:
             --prebuilt \
             --prod \
             --yes \
-            --token "$VERCEL_TOKEN"name: Deploy site-renderer (personal team only)
-
-on:
-  push:
-    branches:
-      - pristine.04
-    paths:
-      - "apps/site-renderer/**"
-      - ".github/workflows/deploy-site-renderer.yml"
-  workflow_dispatch: {}
-
-env:
-  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-
-jobs:
-  site-renderer:
-    name: Deploy site-renderer to personal team
-    runs-on: ubuntu-latest
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_SR }}           # PERSONAL TEAM ONLY
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_SITE }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm (matches package.json)
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.4.0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Build site-renderer with turbo
-        run: pnpm turbo run build --filter=site-renderer
-
-      - name: Clean any existing Vercel config
-        working-directory: apps/site-renderer
-        run: |
-          rm -rf .vercel
-          rm -f vercel.json
-
-      - name: Deploy to Vercel (Vercel will discover the built app)
-        working-directory: apps/site-renderer
-        run: |
-          npx vercel@latest deploy \
-            --prod \
-            --yes \
-            --token "${{ env.VERCEL_TOKEN }}" \
-            --scope "${{ env.VERCEL_ORG_ID }}"
+            --token "$VERCEL_TOKEN"
