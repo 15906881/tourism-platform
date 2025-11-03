@@ -10,7 +10,7 @@ jobs:
   site-renderer:
     runs-on: ubuntu-latest
     env:
-      # ✅ these are your NEW project-specific secrets
+      # 🔐 personal team secrets (already set)
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_SR }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_SITE }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_SR }}
@@ -30,22 +30,25 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      - name: Install deps (root)
-        run: pnpm install --no-frozen-lockfile
+      # 🚫 Avoid running root preinstall/postinstall scripts that try to write /packages
+      - name: Install deps (root; ignore scripts)
+        run: pnpm install --no-frozen-lockfile --ignore-scripts
 
-      - name: Build site-renderer
-        run: pnpm turbo run build --filter=site-renderer
-
-      # 🔥 AGGRESSIVE CLEANUP - remove ALL existing Vercel configs
-      - name: Remove ALL old Vercel configs
+      # 🏗️ Build only what we need (deps + site-renderer)
+      - name: Build packages and app
         run: |
-          echo "Removing all .vercel folders and vercel.json files..."
+          pnpm turbo run build --filter='@weblynk/ui' --filter='@weblynk/blocks' --filter='@weblynk/templates'
+          pnpm turbo run build --filter=site-renderer
+
+      # 🧹 ensure we don't inherit any old project links
+      - name: Remove any existing .vercel config
+        run: |
           find . -name ".vercel" -type d -exec rm -rf {} + || true
           find . -name "vercel.json" -type f -delete || true
-          echo "Cleanup complete!"
 
-      # 🧠 write the CORRECT project.json for THIS project
-      - name: Write local Vercel project config
+      # 🔗 write the correct project link for THIS app
+      - name: Write .vercel/project.json (site-renderer)
+        working-directory: apps/site-renderer
         run: |
           mkdir -p .vercel
           cat > .vercel/project.json <<'JSON'
@@ -54,12 +57,32 @@ jobs:
             "projectId": "$VERCEL_PROJECT_ID"
           }
           JSON
+          echo "Wrote .vercel/project.json:"
+          cat .vercel/project.json
 
-      # 🚀 deploy from REPO ROOT (fixes path doubling)
-      - name: Deploy to Vercel
+      # 🔑 pull prod envs into local file so vercel build can use them
+      - name: Pull Vercel envs (production)
+        working-directory: apps/site-renderer
         run: |
-          npx vercel@latest deploy . \
+          npx vercel@latest env pull .env.production.local \
+            --yes \
+            --token "$VERCEL_TOKEN"
+
+      # 🧱 produce the prebuilt artifact LOCALLY in CI: .vercel/output
+      - name: Create prebuilt output (.vercel/output)
+        working-directory: apps/site-renderer
+        run: |
+          npx vercel@latest build \
             --prod \
             --yes \
-            --scope cranadmin \
+            --token "$VERCEL_TOKEN"
+
+      # 🚀 deploy the prebuilt artifact (no server build on Vercel)
+      - name: Deploy prebuilt to Vercel
+        working-directory: apps/site-renderer
+        run: |
+          npx vercel@latest deploy \
+            --prebuilt \
+            --prod \
+            --yes \
             --token "$VERCEL_TOKEN"
