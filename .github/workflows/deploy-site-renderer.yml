@@ -65,10 +65,23 @@ jobs:
           # Produce Build Output API based on your Project Settings
           npx vercel@48.8.0 build --prod --yes --token "$VERCEL_TOKEN"
 
-      # 5) Deploy the prebuilt output (no server-side build on Vercel)
+      # 5) Sanity check before deploy
+      - name: Sanity check paths
+        working-directory: apps/site-renderer
+        run: |
+          echo "PWD=$(pwd)"
+          test -f .vercel/project.json || (echo "missing .vercel/project.json" && exit 1)
+          test -d .next || (echo "missing .next build" && exit 1)
+          test -d .vercel/output || (echo "missing .vercel/output" && exit 1)
+          echo "✅ All paths look good!"
+
+      # 6) Deploy the prebuilt output (no server-side build on Vercel)
       - name: Deploy (prebuilt host-only)
         working-directory: apps/site-renderer
         run: |
-          npx vercel@48.8.0 deploy --prebuilt --prod --yes \
+          npx vercel@48.8.0 deploy \
+            --prebuilt \
+            --prod \
+            --yes \
             --scope cranadmin \
             --token "$VERCEL_TOKEN"
