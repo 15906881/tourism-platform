@@ -1,7 +1,4 @@
 {
-  "name": "tourism-platform",
-  "version": "1.0.0",
-  "private": true,
   "packageManager": "pnpm@10.4.0",
   "workspaces": [
     "apps/*",
@@ -28,32 +25,9 @@
     "ci:build-validation": "./ci-build-validation.sh",
     "ci:db-validation": "./ci-db-validation.sh",
     "ci:security-check": "./quick-security-check.sh",
-    "test:e2e:ci": "playwright test tests/e2e/smoke.spec.ts",
-    "preinstall": "node scripts/vercel-preinstall.js"
+    "test:e2e:ci": "playwright test tests/e2e/smoke.spec.ts"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.8.0",
-    "@playwright/test": "^1.40.0",
-    "@tailwindcss/postcss": "^4",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "autoprefixer": "^10",
-    "eslint": "^8.0.0",
-    "lint-staged": "^16.2.4",
-    "postcss": "^8",
-    "tailwindcss": "^4",
-    "turbo": "^2.0.0",
-    "typescript": "^5.9.3"
-  },
-  "engines": {
-    "node": "20.x"
-  },
-  "dependencies": {
-    "@trpc/client": "^10.45.2"
-  },
-  "lint-staged": {
-    "*.{ts,tsx,js,jsx}": [
-      "eslint --fix"
-    ]
+    "turbo": "^2.6.0"
   }
 }
