@@ -82,12 +82,12 @@ jobs:
             --yes \
             --token "$VERCEL_TOKEN"
 
-      # 🚀 deploy the prebuilt artifact (no server build on Vercel)
+      # 🚀 deploy the prebuilt artifact from repo root (fixes path doubling)
       - name: Deploy prebuilt to Vercel
-        working-directory: apps/site-renderer
         run: |
           npx vercel@latest deploy \
             --prebuilt \
             --prod \
             --yes \
-            --token "$VERCEL_TOKEN"
+            --token "$VERCEL_TOKEN" \
+            apps/site-renderer
