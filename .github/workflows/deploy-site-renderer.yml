@@ -1,4 +1,4 @@
-name: Deploy site-renderer (host-only)
+name: Deploy site-renderer (host-only, app-dir)
 
 on:
   push:
@@ -14,73 +14,40 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_SR }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.4.0
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.4.0 }
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
 
-      # 1) Install & build everything we need
-      - name: Install deps (root)
+      - name: Install deps
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build site-renderer (and its internal deps)
+      - name: Build app (+internal packages)
         run: pnpm turbo run build --filter=site-renderer
 
-      # 2) Assert the Next build exists (defensive)
-      - name: Verify Next build output exists
+      - name: Sanity check build output
         run: |
           test -f apps/site-renderer/.next/build-manifest.json
           test -d apps/site-renderer/.next/static
 
-      # 3) Point Vercel to the right project (in app dir)
-      - name: Write .vercel/project.json (app dir)
+      - name: Link to the correct Vercel project (in app dir)
         working-directory: apps/site-renderer
         run: |
+          rm -rf .vercel
           mkdir -p .vercel
           cat > .vercel/project.json <<EOF
-          {
-            "orgId": "${VERCEL_ORG_ID}",
-            "projectId": "${VERCEL_PROJECT_ID}"
-          }
+          { "orgId": "${VERCEL_ORG_ID}", "projectId": "${VERCEL_PROJECT_ID}" }
           EOF
 
-      # 4) Create Build Output API locally (this makes `.vercel/output/`)
-      - name: Create Build Output API (.vercel/output)
-        working-directory: apps/site-renderer
-        env:
-          # Make sure the CLI never tries to "install" anything during vercel build
-          VERCEL_FORCE_NO_BUILD_CACHE: "1"
-        run: |
-          # Ensure a shell exists for the CLI (defensive)
-          command -v sh || ln -s /bin/bash /bin/sh
-          # Produce Build Output API based on your Project Settings
-          npx vercel@48.8.0 build --prod --yes --token "$VERCEL_TOKEN"
-
-      # 5) Sanity check before deploy
-      - name: Sanity check paths
-        working-directory: apps/site-renderer
-        run: |
-          echo "PWD=$(pwd)"
-          test -f .vercel/project.json || (echo "missing .vercel/project.json" && exit 1)
-          test -d .next || (echo "missing .next build" && exit 1)
-          test -d .vercel/output || (echo "missing .vercel/output" && exit 1)
-          echo "✅ All paths look good!"
-
-      # 6) Deploy the prebuilt output (no server-side build on Vercel)
-      - name: Deploy (prebuilt host-only)
+      - name: Deploy (no extra path, no --cwd, no --prebuilt)
         working-directory: apps/site-renderer
         run: |
           npx vercel@48.8.0 deploy \
-            --prebuilt \
             --prod \
             --yes \
             --scope cranadmin \
