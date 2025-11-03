@@ -33,6 +33,9 @@ jobs:
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
 
+      - name: Build site-renderer
+        run: pnpm turbo run build --filter=site-renderer
+
       # 🔥 AGGRESSIVE CLEANUP - remove ALL existing Vercel configs
       - name: Remove ALL old Vercel configs
         run: |
@@ -43,39 +46,19 @@ jobs:
 
       # 🧠 write the CORRECT project.json for THIS project
       - name: Write local Vercel project config
-        working-directory: apps/site-renderer
         run: |
           mkdir -p .vercel
           cat > .vercel/project.json <<'JSON'
           {
             "orgId": "$VERCEL_ORG_ID",
-            "projectId": "$VERCEL_PROJECT_ID",
-            "settings": {
-              "framework": "nextjs",
-              "installCommand": "",
-              "buildCommand": "",
-              "outputDirectory": ".vercel/output",
-              "rootDirectory": ""
-            }
+            "projectId": "$VERCEL_PROJECT_ID"
           }
           JSON
 
-      # 🏗 build LOCALLY in CI
-      - name: Vercel local build
-        working-directory: apps/site-renderer
+      # 🚀 deploy from REPO ROOT (fixes path doubling)
+      - name: Deploy to Vercel
         run: |
-          npx vercel@latest build \
-            --prod \
-            --yes \
-            --scope cranadmin \
-            --token "$VERCEL_TOKEN"
-
-      # 🚀 deploy the prebuilt output
-      - name: Deploy prebuilt to Vercel
-        working-directory: apps/site-renderer
-        run: |
-          npx vercel@latest deploy \
-            --prebuilt \
+          npx vercel@latest deploy . \
             --prod \
             --yes \
             --scope cranadmin \
