@@ -60,20 +60,31 @@ jobs:
           echo "Wrote .vercel/project.json:"
           cat .vercel/project.json
 
-      # 🔧 Ensure shell & PATH are available to the Vercel builder
-      - name: Ensure shell & PATH for vercel build
-        run: |
-          echo "SHELL=/bin/bash" >> $GITHUB_ENV
-          echo "PATH=$PATH:/bin:/usr/bin" >> $GITHUB_ENV
-          which sh || true
-          ls -l /bin/sh || true
-
       # 🔑 pull prod envs into local file so vercel build can use them
       - name: Pull Vercel envs (production)
         run: |
           npx vercel@latest env pull apps/site-renderer/.env.production.local \
             --yes \
             --token "$VERCEL_TOKEN"
+
+      # 🐛 Debug shell availability
+      - name: Debug shell availability
+        run: |
+          echo "SHELL=$SHELL"
+          which bash || true
+          which sh || true
+          ls -l /bin/sh || true
+
+      # ✅ make sure /bin/sh exists so vercel build can run the Install Command
+      - name: Ensure /bin/sh exists for vercel build
+        run: |
+          set -euxo pipefail
+          if [ ! -x /bin/sh ]; then
+            echo "No /bin/sh found. Creating symlink to /bin/bash..."
+            sudo ln -s /bin/bash /bin/sh
+          fi
+          which sh
+          ls -l /bin/sh
 
       # 🧱 produce the prebuilt artifact LOCALLY in CI: .vercel/output
       - name: Create prebuilt output (.vercel/output)
