@@ -1,5 +1,4 @@
 name: Deploy site-renderer (host-only, app-dir)
-
 on:
   push:
     branches: [pristine.04]
@@ -24,50 +23,26 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      # Clean up ANY existing .vercel configs first
-      - name: Clean all .vercel configs
-        run: |
-          find . -name ".vercel" -type d -exec rm -rf {} + || true
-          find . -name "vercel.json" -type f -delete || true
-
       - name: Install deps
         run: pnpm install --no-frozen-lockfile
 
       - name: Build app (+internal packages)
         run: pnpm turbo run build --filter=site-renderer
 
-      - name: Sanity check build output
+      - name: Write project.json (app dir)
+        working-directory: apps/site-renderer
+        run: |
+          mkdir -p .vercel
+          cat > .vercel/project.json <<EOF
+          { "orgId": "${VERCEL_ORG_ID}", "projectId": "${VERCEL_PROJECT_ID}" }
+          EOF
+
+      - name: Sanity checks
         run: |
           test -f apps/site-renderer/.next/build-manifest.json
           test -d apps/site-renderer/.next/static
 
-      - name: Link to Vercel project with OVERRIDDEN root directory
-        working-directory: apps/site-renderer
-        run: |
-          mkdir -p .vercel
-          cat > .vercel/project.json <<'JSON'
-          {
-            "orgId": "$VERCEL_ORG_ID",
-            "projectId": "$VERCEL_PROJECT_ID",
-            "settings": {
-              "rootDirectory": ""
-            }
-          }
-          JSON
-          echo "Project config:"
-          cat .vercel/project.json
-
-      - name: Debug current directory structure
-        working-directory: apps/site-renderer
-        run: |
-          echo "=== Current directory ==="
-          pwd
-          echo "=== Contents ==="
-          ls -la
-          echo "=== .vercel contents ==="
-          ls -la .vercel/ || echo "No .vercel folder"
-
-      - name: Deploy from app directory
+      - name: Deploy (host-only; uses .next)
         working-directory: apps/site-renderer
         run: |
           npx vercel@48.8.0 deploy \
