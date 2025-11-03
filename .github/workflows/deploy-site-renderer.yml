@@ -10,7 +10,7 @@ jobs:
   site-renderer:
     runs-on: ubuntu-latest
     env:
-      # your PERSONAL / CRANADMIN team secrets
+      # ✅ these are your NEW project-specific secrets
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_SR }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_SITE }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_SR }}
@@ -33,8 +33,16 @@ jobs:
       - name: Install deps (root)
         run: pnpm install --no-frozen-lockfile
 
-      # 👇 this is the important change
-      - name: Write local Vercel project config (override remote)
+      # 🔥 AGGRESSIVE CLEANUP - remove ALL existing Vercel configs
+      - name: Remove ALL old Vercel configs
+        run: |
+          echo "Removing all .vercel folders and vercel.json files..."
+          find . -name ".vercel" -type d -exec rm -rf {} + || true
+          find . -name "vercel.json" -type f -delete || true
+          echo "Cleanup complete!"
+
+      # 🧠 write the CORRECT project.json for THIS project
+      - name: Write local Vercel project config
         working-directory: apps/site-renderer
         run: |
           mkdir -p .vercel
@@ -47,24 +55,28 @@ jobs:
               "installCommand": "",
               "buildCommand": "",
               "outputDirectory": ".vercel/output",
-              "rootDirectory": "apps/site-renderer"
+              "rootDirectory": ""
             }
           }
           JSON
 
-      - name: Build with Vercel (local / prebuilt)
+      # 🏗 build LOCALLY in CI
+      - name: Vercel local build
         working-directory: apps/site-renderer
         run: |
           npx vercel@latest build \
             --prod \
             --yes \
+            --scope cranadmin \
             --token "$VERCEL_TOKEN"
 
+      # 🚀 deploy the prebuilt output
       - name: Deploy prebuilt to Vercel
         working-directory: apps/site-renderer
         run: |
-            npx vercel@latest deploy \
-              --prebuilt \
-              --prod \
-              --yes \
-              --token "$VERCEL_TOKEN"
+          npx vercel@latest deploy \
+            --prebuilt \
+            --prod \
+            --yes \
+            --scope cranadmin \
+            --token "$VERCEL_TOKEN"
