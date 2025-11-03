@@ -41,7 +41,7 @@ jobs:
           test -f apps/site-renderer/.next/build-manifest.json
           test -d apps/site-renderer/.next/static
 
-      # 3) Point this checkout at the correct Vercel project (IN APP DIRECTORY)
+      # 3) Point Vercel to the right project (in app dir)
       - name: Write .vercel/project.json (app dir)
         working-directory: apps/site-renderer
         run: |
@@ -53,13 +53,22 @@ jobs:
           }
           EOF
 
-      # 4) Deploy the PREBUILT output from the APP directory (no server-side build)
-      - name: Deploy (host-only, prebuilt)
+      # 4) Create Build Output API locally (this makes `.vercel/output/`)
+      - name: Create Build Output API (.vercel/output)
+        working-directory: apps/site-renderer
+        env:
+          # Make sure the CLI never tries to "install" anything during vercel build
+          VERCEL_FORCE_NO_BUILD_CACHE: "1"
+        run: |
+          # Ensure a shell exists for the CLI (defensive)
+          command -v sh || ln -s /bin/bash /bin/sh
+          # Produce Build Output API based on your Project Settings
+          npx vercel@48.8.0 build --prod --yes --token "$VERCEL_TOKEN"
+
+      # 5) Deploy the prebuilt output (no server-side build on Vercel)
+      - name: Deploy (prebuilt host-only)
         working-directory: apps/site-renderer
         run: |
-          npx vercel@48.8.0 deploy . \
-            --prebuilt \
-            --prod \
-            --yes \
+          npx vercel@48.8.0 deploy --prebuilt --prod --yes \
             --scope cranadmin \
             --token "$VERCEL_TOKEN"
